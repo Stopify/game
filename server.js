@@ -9,122 +9,187 @@ app.use(express.static(path.join(__dirname, 'public')));
 const server = http.createServer(app);
 const io = new Server(server);
 
+const WORLD = 2400, FOOD_COUNT = 220, KNOCK = 44;
 const BOT_COUNT = 5;
-const BOT_NAMES = ['Chomper', 'Gooey', 'Nibbles', 'Blorp', 'Wiggles', 'Snapper'];
-const BOT_COLORS = ['#8888aa', '#aa8866', '#66aa88', '#aa6688', '#88aa66', '#6688aa'];
-const WORLD = 2400;
 
-const rooms = {}; // code -> { bots: [...], interval }
+function mulberry32(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function makeFood(){
+  const rng=mulberry32(42), arr=[];
+  for(let i=0;i<FOOD_COUNT;i++) arr.push({x:rng()*WORLD,y:rng()*WORLD,eaten:false});
+  return arr;
+}
+function levelFromXp(xp){return Math.floor(xp/50)+1;}
+function radiusFromLevel(lv){return 16+lv*2.4;}
 
-function makeBot(i) {
+const TIERS = [
+  { name:'Basic',  color:'#8888aa', speed:1.0, dmg:8,  aggro:190, cooldown:1900, startLevel:1, hp:50 },
+  { name:'Basic',  color:'#88aa88', speed:1.0, dmg:8,  aggro:190, cooldown:1900, startLevel:1, hp:50 },
+  { name:'Hunter', color:'#aa6688', speed:1.45,dmg:13, aggro:260, cooldown:1400, startLevel:2, hp:75 },
+  { name:'Hunter', color:'#aa8866', speed:1.45,dmg:13, aggro:260, cooldown:1400, startLevel:2, hp:75 },
+  { name:'Alpha',  color:'#ffaa33', speed:1.85,dmg:20, aggro:340, cooldown:1000, startLevel:4, hp:120 },
+];
+
+const rooms = {}; // code -> { bots, food, interval }
+
+function makeBot(i){
+  const tier=TIERS[i%TIERS.length];
   return {
-    id: 'bot-' + i,
-    x: 200 + Math.random() * (WORLD - 400),
-    y: 200 + Math.random() * (WORLD - 400),
-    tx: 200 + Math.random() * (WORLD - 400),
-    ty: 200 + Math.random() * (WORLD - 400),
-    level: 1 + Math.floor(Math.random() * 3),
-    hp: 60,
-    maxHp: 60,
-    name: BOT_NAMES[i % BOT_NAMES.length],
-    color: BOT_COLORS[i % BOT_COLORS.length],
-    bulk: 0,
+    id:'bot-'+i, tier,
+    x:200+Math.random()*(WORLD-400), y:200+Math.random()*(WORLD-400),
+    tx:200+Math.random()*(WORLD-400), ty:200+Math.random()*(WORLD-400),
+    level:tier.startLevel, xp:(tier.startLevel-1)*50, hp:tier.hp, maxHp:tier.hp,
+    name:tier.name+(i+1), cooldownUntil:0, respawnAt:null,
   };
 }
 
-function ensureRoom(code) {
-  if (rooms[code]) return rooms[code];
-  const bots = [];
-  for (let i = 0; i < BOT_COUNT; i++) bots.push(makeBot(i));
-  const room = { bots };
-  room.interval = setInterval(() => tickBots(code), 100);
-  rooms[code] = room;
+function ensureRoom(code){
+  if(rooms[code]) return rooms[code];
+  const bots=[]; for(let i=0;i<BOT_COUNT;i++) bots.push(makeBot(i));
+  const room={ bots, food:makeFood() };
+  room.interval=setInterval(()=>tickBots(code),120);
+  rooms[code]=room;
   return room;
 }
 
-function tickBots(code) {
-  const room = rooms[code];
-  if (!room) return;
-  room.bots.forEach((b) => {
-    if (b.respawnAt) {
-      if (Date.now() < b.respawnAt) return;
-      b.respawnAt = null;
-      b.hp = b.maxHp;
-      b.x = 200 + Math.random() * (WORLD - 400);
-      b.y = 200 + Math.random() * (WORLD - 400);
+function respawnFood(code,i,delay){
+  setTimeout(()=>{
+    const room=rooms[code]; if(!room||!room.food[i]) return;
+    room.food[i].x=60+Math.random()*(WORLD-120); room.food[i].y=60+Math.random()*(WORLD-120); room.food[i].eaten=false;
+    io.to(code).emit('food',{i,respawn:true,x:room.food[i].x,y:room.food[i].y});
+  },delay);
+}
+
+function getRoomPlayers(code){
+  const set=io.sockets.adapter.rooms.get(code);
+  if(!set) return [];
+  const out=[];
+  set.forEach(id=>{ const s=io.sockets.sockets.get(id); if(s&&s.data.state) out.push(s.data.state); });
+  return out;
+}
+
+function tickBots(code){
+  const room=rooms[code]; if(!room) return;
+  const now=Date.now();
+  const players=getRoomPlayers(code);
+  room.bots.forEach(b=>{
+    if(b.respawnAt){
+      if(now<b.respawnAt) return;
+      b.respawnAt=null; b.level=b.tier.startLevel; b.xp=(b.tier.startLevel-1)*50; b.hp=b.tier.hp;
+      b.x=200+Math.random()*(WORLD-400); b.y=200+Math.random()*(WORLD-400);
     }
-    const dx = b.tx - b.x, dy = b.ty - b.y, d = Math.hypot(dx, dy) || 1;
-    if (d < 20) { b.tx = 100 + Math.random() * (WORLD - 200); b.ty = 100 + Math.random() * (WORLD - 200); }
-    const speed = 1.1;
-    b.x += (dx / d) * speed; b.y += (dy / d) * speed;
-  });
-  io.to(code).emit('bots', room.bots.map((b) => ({
-    id: b.id, x: b.x, y: b.y, level: b.level, hp: b.hp, maxHp: b.maxHp,
-    name: b.name, color: b.color, bulk: b.bulk, down: !!b.respawnAt,
-  })));
-}
-
-function roomSize(code) {
-  const r = io.sockets.adapter.rooms.get(code);
-  return r ? r.size : 0;
-}
-
-io.on('connection', (socket) => {
-  socket.on('join', (code) => {
-    if (typeof code !== 'string' || !code.trim()) return;
-    const room = code.trim().toUpperCase().slice(0, 6);
-    socket.data.room = room;
-    socket.join(room);
-    const state = ensureRoom(room);
-    socket.emit('bots', state.bots.map((b) => ({
-      id: b.id, x: b.x, y: b.y, level: b.level, hp: b.hp, maxHp: b.maxHp,
-      name: b.name, color: b.color, bulk: b.bulk, down: !!b.respawnAt,
-    })));
-  });
-
-  ['state', 'food'].forEach((event) => {
-    socket.on(event, (data) => {
-      if (!socket.data.room) return;
-      socket.to(socket.data.room).emit(event, { ...data, id: socket.id });
+    const r=radiusFromLevel(b.level);
+    let bestD=Infinity, bestX=null, bestY=null, bestType=null, bestRef=null, bestR=0;
+    players.forEach(p=>{
+      const d=Math.hypot(p.x-b.x,p.y-b.y), pr=radiusFromLevel(p.level||1);
+      if(d<b.tier.aggro && pr<=r*1.25 && d<bestD){ bestD=d; bestX=p.x; bestY=p.y; bestType='player'; bestRef=p; bestR=pr; }
     });
+    room.bots.forEach(ob=>{
+      if(ob===b||ob.respawnAt) return;
+      const d=Math.hypot(ob.x-b.x,ob.y-b.y), obr=radiusFromLevel(ob.level);
+      if(d<b.tier.aggro && obr<=r*1.25 && d<bestD){ bestD=d; bestX=ob.x; bestY=ob.y; bestType='bot'; bestRef=ob; bestR=obr; }
+    });
+    let pIdx=-1,pDist=Infinity,pTarget=null;
+    room.food.forEach((f,i)=>{ if(f.eaten) return; const d=Math.hypot(f.x-b.x,f.y-b.y); if(d<420&&d<pDist){pDist=d;pIdx=i;pTarget=f;} });
+
+    let mx=b.tx-b.x, my=b.ty-b.y;
+    if(bestRef && bestD<b.tier.aggro){
+      mx=bestX-b.x; my=bestY-b.y;
+      if(bestD<r+bestR+6 && now>=b.cooldownUntil){
+        b.cooldownUntil=now+b.tier.cooldown;
+        const dx=(bestX-b.x)/(bestD||1), dy=(bestY-b.y)/(bestD||1);
+        if(bestType==='player'){
+          io.to(bestRef.id).emit('hit',{dmg:b.tier.dmg,byName:b.name,from:b.id,kx:dx*KNOCK,ky:dy*KNOCK});
+        } else {
+          bestRef.hp=Math.max(0,bestRef.hp-b.tier.dmg);
+          bestRef.x=Math.min(WORLD,Math.max(0,bestRef.x+dx*KNOCK*0.6));
+          bestRef.y=Math.min(WORLD,Math.max(0,bestRef.y+dy*KNOCK*0.6));
+          if(bestRef.hp<=0 && !bestRef.respawnAt){ bestRef.respawnAt=now+8000; b.xp+=40; b.level=levelFromXp(b.xp); }
+        }
+      }
+    } else if(pTarget){
+      mx=pTarget.x-b.x; my=pTarget.y-b.y;
+      if(pDist<r+10){
+        pTarget.eaten=true; b.xp+=8; b.level=levelFromXp(b.xp);
+        io.to(code).emit('food',{i:pIdx});
+        respawnFood(code,pIdx,9000+Math.random()*6000);
+      }
+    } else {
+      const wd=Math.hypot(b.tx-b.x,b.ty-b.y);
+      if(wd<20){ b.tx=100+Math.random()*(WORLD-200); b.ty=100+Math.random()*(WORLD-200); }
+    }
+    const d=Math.hypot(mx,my)||1;
+    b.x=Math.min(WORLD,Math.max(0,b.x+(mx/d)*b.tier.speed));
+    b.y=Math.min(WORLD,Math.max(0,b.y+(my/d)*b.tier.speed));
   });
-  socket.on('skin', (data) => {
-    if (!socket.data.room) return;
-    socket.to(socket.data.room).emit('skin', { ...data, id: socket.id });
+  io.to(code).emit('bots', room.bots.map(b=>({id:b.id,x:b.x,y:b.y,level:b.level,hp:b.hp,maxHp:b.maxHp,name:b.name,color:b.tier.color,bulk:0,down:!!b.respawnAt})));
+}
+
+function roomSize(code){ const r=io.sockets.adapter.rooms.get(code); return r?r.size:0; }
+
+io.on('connection',(socket)=>{
+  socket.on('join',(code)=>{
+    if(typeof code!=='string'||!code.trim()) return;
+    const room=code.trim().toUpperCase().slice(0,6);
+    socket.data.room=room;
+    socket.join(room);
+    const state=ensureRoom(room);
+    socket.emit('bots', state.bots.map(b=>({id:b.id,x:b.x,y:b.y,level:b.level,hp:b.hp,maxHp:b.maxHp,name:b.name,color:b.tier.color,bulk:0,down:!!b.respawnAt})));
   });
 
-  socket.on('hit', (data) => {
-    if (!data || !data.target) return;
-    if (String(data.target).startsWith('bot-')) {
-      const room = rooms[socket.data.room];
-      if (!room) return;
-      const bot = room.bots.find((b) => b.id === data.target);
-      if (!bot || bot.respawnAt) return;
-      bot.hp = Math.max(0, bot.hp - data.dmg);
-      if (bot.hp <= 0) {
-        bot.respawnAt = Date.now() + 8000;
-        socket.emit('killed', { from: bot.id, bot: true });
-      }
+  socket.on('state',(data)=>{
+    if(!socket.data.room) return;
+    socket.data.state={...data,id:socket.id};
+    socket.to(socket.data.room).emit('state',{...data,id:socket.id});
+  });
+  socket.on('food',(data)=>{
+    if(!socket.data.room) return;
+    const room=rooms[socket.data.room];
+    if(room && room.food[data.i]){
+      if(data.respawn){ room.food[data.i].eaten=false; if(data.x!=null){room.food[data.i].x=data.x;room.food[data.i].y=data.y;} }
+      else room.food[data.i].eaten=true;
+    }
+    socket.to(socket.data.room).emit('food',{...data,id:socket.id});
+  });
+  socket.on('skin',(data)=>{
+    if(!socket.data.room) return;
+    socket.to(socket.data.room).emit('skin',{...data,id:socket.id});
+  });
+
+  socket.on('hit',(data)=>{
+    if(!data||!data.target) return;
+    if(String(data.target).startsWith('bot-')){
+      const room=rooms[socket.data.room]; if(!room) return;
+      const bot=room.bots.find(b=>b.id===data.target);
+      if(!bot||bot.respawnAt) return;
+      bot.hp=Math.max(0,bot.hp-data.dmg);
+      bot.x=Math.min(WORLD,Math.max(0,bot.x+(data.kx||0)));
+      bot.y=Math.min(WORLD,Math.max(0,bot.y+(data.ky||0)));
+      if(bot.hp<=0){ bot.respawnAt=Date.now()+8000; socket.emit('killed',{from:bot.id,bot:true}); }
       return;
     }
-    io.to(data.target).emit('hit', { ...data, from: socket.id });
+    io.to(data.target).emit('hit',{...data,from:socket.id});
   });
-  socket.on('killed', (data) => {
-    if (data && data.target) io.to(data.target).emit('killed', { from: socket.id });
+  socket.on('killed',(data)=>{
+    if(!data||!data.target) return;
+    if(String(data.target).startsWith('bot-')){
+      const room=rooms[socket.data.room]; if(!room) return;
+      const bot=room.bots.find(b=>b.id===data.target);
+      if(bot){ bot.xp+=45; bot.level=levelFromXp(bot.xp); }
+      return;
+    }
+    io.to(data.target).emit('killed',{from:socket.id});
   });
 
-  socket.on('disconnect', () => {
-    if (socket.data.room) {
-      socket.to(socket.data.room).emit('peerLeave', { id: socket.id });
-      setTimeout(() => {
-        if (roomSize(socket.data.room) === 0 && rooms[socket.data.room]) {
-          clearInterval(rooms[socket.data.room].interval);
-          delete rooms[socket.data.room];
-        }
-      }, 1000);
+  socket.on('disconnect',()=>{
+    if(socket.data.room){
+      const rc=socket.data.room;
+      socket.to(rc).emit('peerLeave',{id:socket.id});
+      setTimeout(()=>{
+        if(roomSize(rc)===0 && rooms[rc]){ clearInterval(rooms[rc].interval); delete rooms[rc]; }
+      },1000);
     }
   });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log('Blob Arena server listening on port ' + PORT));
+const PORT=process.env.PORT||3000;
+server.listen(PORT,()=>console.log('Blob Arena server listening on port '+PORT));
