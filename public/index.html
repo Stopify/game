@@ -179,7 +179,7 @@ const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
 function resize(){canvas.width=innerWidth;canvas.height=innerHeight;}
 addEventListener('resize',resize);resize();
 
-let me=null, peers={}, peerSkins={}, net=null, pointer={x:innerWidth/2,y:innerHeight/2}, alive=false;
+let me=null, peers={}, peerSkins={}, bots={}, net=null, pointer={x:innerWidth/2,y:innerHeight/2}, alive=false;
 let manualPaused=false, ownSkin=null, skinDataURL=null;
 
 function randSpawn(){return {x:100+Math.random()*(WORLD-200), y:100+Math.random()*(WORLD-200)};}
@@ -222,9 +222,10 @@ function setupNet(code){
   socket.on('connect_error',()=>{ document.getElementById('lobbyTagText').textContent=code+' (server waking up… retrying)'; });
   socket.on('disconnect',()=>{ document.getElementById('lobbyTagText').textContent=code+' (reconnecting…)'; });
   socket.on('state',data=>{ peers[data.id]=data; updateLobbyTag(code); });
-  socket.on('food',data=>{ eaten.add(data.i); });
+  socket.on('food',data=>{ if(data.respawn){ if(data.x!=null){food[data.i].x=data.x;food[data.i].y=data.y;} eaten.delete(data.i); } else { eaten.add(data.i); } });
   socket.on('skin',data=>{ const img=new Image(); img.src=data.img; peerSkins[data.id]={img}; });
   socket.on('peerLeave',data=>{ delete peers[data.id]; delete peerSkins[data.id]; updateLobbyTag(code); });
+  socket.on('bots',list=>{ const nb={}; list.forEach(b=>{nb[b.id]=b;}); bots=nb; });
   socket.on('hit',data=>{
     if(!alive)return;
     me.hp=Math.max(0,me.hp-data.dmg); me.lastDamage=performance.now();
@@ -303,6 +304,11 @@ function loop(t){
       if(fd<r){
         eaten.add(i); me.xp+=6*me.xpMult; me.level=levelFromXp(me.xp);
         net&&net.sendFood({i}); checkUpgradeSteps();
+        setTimeout(()=>{
+          food[i].x=60+Math.random()*(WORLD-120); food[i].y=60+Math.random()*(WORLD-120);
+          eaten.delete(i);
+          net&&net.sendFood({i,respawn:true,x:food[i].x,y:food[i].y});
+        }, 9000+Math.random()*6000);
       }
     }
     if(now<me.lungeUntil){
@@ -310,6 +316,15 @@ function loop(t){
         const p=peers[id]; if(!p||me.hitSet.has(id))continue;
         const pr=radiusFromLevel(p.level||1,p.bulk||0);
         if(Math.hypot(p.x-me.x,p.y-me.y)<r+pr){
+          me.hitSet.add(id);
+          const dmg=(16+me.level*1.2)*me.lungeDmgMult;
+          net&&net.sendHit({dmg,byName:me.name}, id);
+        }
+      }
+      for(const id in bots){
+        const b=bots[id]; if(!b||b.down||me.hitSet.has(id))continue;
+        const br=radiusFromLevel(b.level||1,b.bulk||0);
+        if(Math.hypot(b.x-me.x,b.y-me.y)<r+br){
           me.hitSet.add(id);
           const dmg=(16+me.level*1.2)*me.lungeDmgMult;
           net&&net.sendHit({dmg,byName:me.name}, id);
@@ -349,6 +364,10 @@ function draw(){
     const skin=peerSkins[id]&&peerSkins[id].img;
     drawBlob(p.x,p.y,radiusFromLevel(p.level||1,p.bulk||0),p.color||'#888',p.name||'?',p.level||1,
       (p.hp!=null&&p.maxHp)?p.hp/p.maxHp:null, skin&&skin.complete?skin:null);
+  }
+  for(const id in bots){
+    const b=bots[id]; if(!b||b.down)continue;
+    drawBlob(b.x,b.y,radiusFromLevel(b.level||1,b.bulk||0),b.color,b.name,b.level,b.hp/b.maxHp,null);
   }
   if(me && alive) drawBlob(me.x,me.y,radiusFromLevel(me.level,me.bulk),me.color,me.name+' (you)',me.level,
       me.hp/(HP_BASE+me.maxHpBonus), ownSkin&&ownSkin.complete?ownSkin:null);
