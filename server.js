@@ -205,8 +205,8 @@ io.on('connection',(socket)=>{
       bot.vky=(bot.vky||0)+(data.ky||0)*0.5;
       if(bot.hp<=0){
         bot.respawnAt=Date.now()+8000;
-        const bounty = Math.max(90, Math.floor(bot.level * 65 + bot.xp * 0.3));
-        socket.emit('killed',{from:bot.id, bot:true, xpBounty: bounty, victimName: bot.name, victimLevel: bot.level});
+        const bounty = Math.max(50, Math.floor(bot.level * 80 + bot.xp * 0.4));
+        socket.emit('killed',{from:bot.id, bot:true, xpBounty: bounty, victimXp: bot.xp, victimName: bot.name, victimLevel: bot.level});
       }
       return;
     }
@@ -227,6 +227,7 @@ io.on('connection',(socket)=>{
     io.to(data.target).emit('killed',{
       from: socket.id,
       xpBounty: data.xpBounty,
+      victimXp: data.victimXp,
       victimName: data.victimName,
       victimLevel: data.victimLevel
     });
