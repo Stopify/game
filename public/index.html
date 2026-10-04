@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blob Arena</title>
+<style>
+:root{--bg:#0b1020;--grid:#161d33;--panel:#11162a;--panel-b:#232b4a;--text:#eef1ff;--sub:#8b93b8;--accent:#5ee1c8;--accent2:#ff6b9d;}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Roboto,sans-serif;}
+canvas{display:block;width:100%;height:100%;touch-action:none;}
+#start{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,#1a2140,var(--bg));z-index:10;padding:16px;overflow:auto;}
+#card{background:var(--panel);border:1px solid var(--panel-b);border-radius:16px;padding:24px;width:min(360px,92vw);text-align:center;}
+#card h1{font-size:22px;margin-bottom:4px;}
+#card p{color:var(--sub);font-size:12px;margin-bottom:14px;}
+#name,#lobby{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--panel-b);background:transparent;color:var(--text);font-size:15px;margin-bottom:10px;}
+#lobbyRow{display:flex;gap:6px;margin-bottom:12px;}
+#lobbyRow input{flex:1;text-align:center;letter-spacing:2px;font-weight:700;text-transform:uppercase;}
+#lobbyRow button{padding:0 12px;border-radius:8px;border:1px solid var(--panel-b);background:transparent;color:var(--sub);cursor:pointer;font-size:11px;}
+#colors{display:flex;gap:8px;justify-content:center;margin-bottom:12px;}
+.swatch{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;}
+.swatch.sel{border-color:var(--text);}
+#editor{width:192px;height:192px;image-rendering:pixelated;border-radius:50%;border:2px solid var(--panel-b);cursor:crosshair;touch-action:none;}
+#editorWrap{margin-bottom:10px;}
+#editorWrap .lbl{font-size:11px;color:var(--sub);margin-bottom:6px;}
+#clearSkin{margin-top:8px;font-size:11px;background:transparent;border:1px solid var(--panel-b);color:var(--sub);padding:5px 10px;border-radius:6px;cursor:pointer;}
+#play{width:100%;padding:12px;border:none;border-radius:8px;background:var(--accent);color:#04231d;font-weight:700;font-size:15px;cursor:pointer;margin-top:14px;}
+#status{margin-top:10px;font-size:11px;color:var(--sub);}
+#hud{position:fixed;left:12px;bottom:12px;z-index:5;background:var(--panel);border:1px solid var(--panel-b);border-radius:10px;padding:8px 12px;font-size:13px;display:none;min-width:170px;}
+#hud .lvl{font-weight:700;color:var(--accent);}
+#xpbar{height:6px;background:var(--panel-b);border-radius:4px;margin-top:6px;overflow:hidden;}
+#xpfill{height:100%;background:var(--accent);width:0%;}
+#hpbar{height:8px;background:var(--panel-b);border-radius:4px;margin-top:6px;overflow:hidden;}
+#hpfill{height:100%;background:#ff6b6b;width:100%;}
+#lungeText{font-size:10px;color:var(--sub);margin-top:4px;}
+#lobbyTag{position:fixed;left:12px;top:12px;z-index:5;background:var(--panel);border:1px solid var(--panel-b);border-radius:10px;padding:6px 10px;font-size:11px;color:var(--sub);display:none;}
+#pauseBtn{position:fixed;right:12px;bottom:12px;z-index:5;background:var(--panel);border:1px solid var(--panel-b);border-radius:50%;width:40px;height:40px;font-size:16px;cursor:pointer;display:none;color:var(--text);}
+#board{position:fixed;right:12px;top:12px;z-index:5;background:var(--panel);border:1px solid var(--panel-b);border-radius:10px;padding:10px 12px;font-size:12px;display:none;min-width:150px;}
+#board h3{font-size:11px;color:var(--sub);text-transform:uppercase;margin-bottom:6px;letter-spacing:.5px;}
+#board div.row{display:flex;justify-content:space-between;padding:2px 0;}
+#respawn,#pauseOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.66);z-index:9;}
+#respawn .box,#pauseOverlay .box{background:var(--panel);border:1px solid var(--panel-b);border-radius:14px;padding:24px;text-align:center;max-width:420px;}
+#respawn button,#pauseOverlay button{margin-top:12px;padding:10px 18px;border:none;border-radius:8px;background:var(--accent2);color:#2a0716;font-weight:700;cursor:pointer;}
+#upgradeOverlay{position:fixed;left:12px;top:70px;z-index:9;display:none;max-width:230px;}
+#upgradeOverlay .box{background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:12px;text-align:left;box-shadow:0 4px 18px rgba(0,0,0,.35);}
+#upgradeOverlay .hdr{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px;}
+#upgradeCards{display:flex;flex-direction:column;gap:6px;}
+.upcard{width:100%;padding:7px 9px;border:1px solid var(--panel-b);border-radius:8px;cursor:pointer;background:rgba(127,127,127,.08);color:var(--text);display:flex;align-items:center;gap:8px;text-align:left;}
+.upcard:hover{border-color:var(--accent);}
+.upcard .ic{font-size:17px;flex-shrink:0;}
+.upcard .txt{display:flex;flex-direction:column;min-width:0;}
+.upcard .nm{font-weight:700;font-size:11px;}
+.upcard .ds{font-size:9.5px;color:var(--sub);line-height:1.25;}
+</style>
+</head>
+<body>
+<div id="start">
+  <div id="card">
+    <h1>🟢 Blob Arena</h1>
+    <p>Serverless P2P — no account, no server. Everyone using the same lobby code lands in the same match.</p>
+    <input id="name" maxlength="14" placeholder="Your name">
+    <div id="lobbyRow">
+      <input id="lobby" maxlength="6" placeholder="LOBBY">
+      <button id="randomLobby">Random</button>
+    </div>
+    <div id="colors"></div>
+    <div id="editorWrap">
+      <div class="lbl">Draw your blob skin</div>
+      <canvas id="editor" width="16" height="16"></canvas><br>
+      <button id="clearSkin">Reset to solid color</button>
+    </div>
+    <button id="play">Play</button>
+    <div id="status">Share your lobby code with friends before you hit Play.</div>
+  </div>
+</div>
+<canvas id="c"></canvas>
+<div id="lobbyTag">Lobby: <b id="lobbyTagText"></b></div>
+<div id="hud">
+  <div><span class="lvl" id="lvlText">Lv 1</span> · <span id="xpText">0 xp</span></div>
+  <div id="xpbar"><div id="xpfill"></div></div>
+  <div id="hpbar"><div id="hpfill"></div></div>
+  <div id="lungeText">Lunge ready — click to attack</div>
+</div>
+<button id="pauseBtn">⏸</button>
+<div id="board"><h3>Leaderboard</h3><div id="rows"></div></div>
+<div id="respawn"><div class="box">
+  <div id="deathMsg" style="font-size:16px;margin-bottom:4px;">You were eaten!</div>
+  <div style="color:var(--sub);font-size:12px;">Final level: <span id="finalLvl"></span></div>
+  <button id="respawnBtn">Respawn</button>
+</div></div>
+<div id="upgradeOverlay"><div class="box">
+  <div class="hdr">🎉 Level up! Pick one:</div>
+  <div id="upgradeCards"></div>
+</div></div>
+<div id="pauseOverlay"><div class="box">
+  <div style="font-size:18px;margin-bottom:6px;">⏸ Paused</div>
+  <div style="color:var(--sub);font-size:12px;">Your blob is frozen. Others keep playing.</div>
+  <button id="resumeBtn">Resume</button>
+</div></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const COLORS=["#5ee1c8","#ff6b9d","#ffd166","#7aa2ff","#c084fc","#ff9f6b"];
+const cEl=document.getElementById('colors');
+let chosenColor=COLORS[0], drawColor=COLORS[0], hasDrawn=false;
+const editor=document.getElementById('editor'), ectx=editor.getContext('2d');
+function fillEditor(col){ectx.fillStyle=col;ectx.fillRect(0,0,16,16);}
+fillEditor(chosenColor);
+COLORS.forEach((col,i)=>{
+  const s=document.createElement('div');
+  s.className='swatch'+(i===0?' sel':'');
+  s.style.background=col;
+  s.onclick=()=>{ chosenColor=col; drawColor=col;
+    [...cEl.children].forEach(c=>c.classList.remove('sel')); s.classList.add('sel');
+    if(!hasDrawn) fillEditor(col); };
+  cEl.appendChild(s);
+});
+document.getElementById('clearSkin').onclick=()=>{ fillEditor(drawColor); hasDrawn=false; };
+let drawing=false;
+function paintAt(clientX,clientY){
+  const rect=editor.getBoundingClientRect();
+  const cx=Math.floor((clientX-rect.left)/(rect.width/16));
+  const cy=Math.floor((clientY-rect.top)/(rect.height/16));
+  if(cx<0||cy<0||cx>15||cy>15)return;
+  ectx.fillStyle=drawColor; ectx.fillRect(cx,cy,1,1); hasDrawn=true;
+}
+editor.addEventListener('pointerdown',e=>{drawing=true;paintAt(e.clientX,e.clientY);});
+editor.addEventListener('pointermove',e=>{if(drawing)paintAt(e.clientX,e.clientY);});
+addEventListener('pointerup',()=>drawing=false);
+
+function randCode(){return Math.random().toString(36).slice(2,6).toUpperCase();}
+const lobbyInput=document.getElementById('lobby');
+lobbyInput.value=randCode();
+document.getElementById('randomLobby').onclick=()=>{lobbyInput.value=randCode();};
+
+const WORLD=3600, OUTER_FOOD=300, CENTER_FOOD=70, CENTER_RADIUS=520;
+const BASE_SPEED=2.3, LUNGE_SPEED=10.5, LUNGE_DURATION=220, LUNGE_ENDLAG=280, LUNGE_COOLDOWN=1400, KNOCK=44;
+const HP_BASE=100, REGEN_DELAY=4000, REGEN_RATE=9;
+// Ice physics: how much velocity survives each frame. 0.91 = ~1.2sec slide-out at 60fps.
+const VEL_FRICTION=0.91;
+// Danger zone: ~7 hp/sec expressed per-frame at 60fps
+const CENTER_DOT=7;
+
+function mulberry32(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+// Position generation must advance the RNG exactly like the server's (2 draws per outer pellet: x, y).
+// Color is derived from the index instead of drawn from the RNG, so it never desyncs the sequence.
+const rngA=mulberry32(42);
+let food=[];
+for(let i=0;i<OUTER_FOOD;i++){food.push({x:rngA()*WORLD,y:rngA()*WORLD,big:false,c:'hsl('+((i*63)%360)+',70%,60%)'});}
+const rngB=mulberry32(777), FCX=WORLD/2, FCY=WORLD/2;
+for(let i=0;i<CENTER_FOOD;i++){
+  const ang=rngB()*Math.PI*2, rad=Math.sqrt(rngB())*CENTER_RADIUS;
+  food.push({x:FCX+Math.cos(ang)*rad, y:FCY+Math.sin(ang)*rad, big:true, c:'#ffd166'});
+}
+const eaten=new Set();
+
+function levelFromXp(xp){
+  let lvl=1, needed=0, step=130;
+  while(xp>=needed+step){ needed+=step; lvl++; step+=45; }
+  return lvl;
+}
+// Returns 0..1 progress within the current level (correctly handles growing XP steps)
+function xpProgress(xp){
+  let needed=0, step=130;
+  while(xp>=needed+step){ needed+=step; step+=45; }
+  return (xp-needed)/step;
+}
+function radiusFromLevel(lv,bulk){return (16+lv*2.4)*(1+(bulk||0));}
+function freshStats(){return {speedMult:1,magnet:0,xpMult:1,bulk:0,lungeDmgMult:1,lungeCdMult:1,regenMult:1,maxHpBonus:0};}
+
+const UPGRADES=[
+  {id:'swift',name:'Swift',desc:'+12% move speed',icon:'⚡',apply:m=>m.speedMult*=1.12},
+  {id:'fury',name:'Fury',desc:'-15% lunge cooldown',icon:'🔥',apply:m=>m.lungeCdMult*=0.85},
+  {id:'power',name:'Power Strike',desc:'+25% lunge damage',icon:'💥',apply:m=>m.lungeDmgMult*=1.25},
+  {id:'vitality',name:'Vitality',desc:'+25 max HP, heals now',icon:'❤️',apply:m=>{m.maxHpBonus+=25;m.hp=Math.min(m.hp+25,HP_BASE+m.maxHpBonus);}},
+  {id:'regen',name:'Regeneration',desc:'+50% hp regen rate',icon:'🌿',apply:m=>m.regenMult*=1.5},
+  {id:'magnet',name:'Magnetism',desc:'+50 pellet pull range',icon:'🧲',apply:m=>m.magnet+=50},
+  {id:'feast',name:'Feast',desc:'+25% xp from pellets',icon:'🍒',apply:m=>m.xpMult*=1.25},
+  {id:'bulk',name:'Bulk Up',desc:'+8% size',icon:'💪',apply:m=>m.bulk+=0.08},
+];
+let pendingUpgrades=0, upgradeOpen=false;
+function showUpgradePicker(){
+  upgradeOpen=true;
+  const pool=[...UPGRADES], picks=[];
+  while(picks.length<3 && pool.length) picks.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+  const wrap=document.getElementById('upgradeCards'); wrap.innerHTML='';
+  picks.forEach(u=>{
+    const d=document.createElement('div'); d.className='upcard';
+    d.innerHTML=`<div class="ic">${u.icon}</div><div class="txt"><div class="nm">${u.name}</div><div class="ds">${u.desc}</div></div>`;
+    d.onclick=()=>{ u.apply(me); pendingUpgrades--;
+      document.getElementById('upgradeOverlay').style.display='none'; upgradeOpen=false;
+      if(pendingUpgrades>0) showUpgradePicker(); };
+    wrap.appendChild(d);
+  });
+  document.getElementById('upgradeOverlay').style.display='flex';
+}
+function checkUpgradeSteps(){
+  while(me.level-me.lastUpgradeLevel>=me.upgradeStep){
+    pendingUpgrades++; me.lastUpgradeLevel+=me.upgradeStep; me.upgradeStep+=1;
+  }
+  if(pendingUpgrades>0 && !upgradeOpen) showUpgradePicker();
+}
+
+const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
+function resize(){canvas.width=innerWidth;canvas.height=innerHeight;}
+addEventListener('resize',resize);resize();
+
+let me=null, peers={}, peerSkins={}, bots={}, net=null, pointer={x:innerWidth/2,y:innerHeight/2}, alive=false;
+let manualPaused=false, ownSkin=null, skinDataURL=null;
+
+function randSpawn(){return {x:100+Math.random()*(WORLD-200), y:100+Math.random()*(WORLD-200)};}
+
+document.getElementById('play').onclick=()=>{
+  const nm=(document.getElementById('name').value||'Blob').trim().slice(0,14);
+  const code=(lobbyInput.value||'ABCD').trim().toUpperCase().slice(0,6);
+  const sp=randSpawn();
+  me={x:sp.x,y:sp.y,xp:0,level:1,lastUpgradeLevel:0,upgradeStep:1,
+      hp:HP_BASE,lastDamage:0,lungeCooldownUntil:0,lungeUntil:0,lungeEndlagUntil:0,lungeDX:0,lungeDY:0,
+      kx:0,ky:0, // knockback/ice velocity
+      hitSet:new Set(),
+      name:nm,color:chosenColor,...freshStats()};
+  skinDataURL=editor.toDataURL('image/png');
+  ownSkin=new Image(); ownSkin.src=skinDataURL;
+  document.getElementById('start').style.display='none';
+  document.getElementById('hud').style.display='block';
+  document.getElementById('board').style.display='block';
+  document.getElementById('pauseBtn').style.display='block';
+  document.getElementById('lobbyTag').style.display='block';
+  document.getElementById('lobbyTagText').textContent=code+' (connecting…)';
+  alive=true;
+  requestAnimationFrame(loop);
+  setupNet(code);
+};
+
+function updateLobbyTag(code){
+  const n=Object.keys(peers).length;
+  document.getElementById('lobbyTagText').textContent=code+' ('+(n===0?'live — waiting for peers':n+' other player'+(n>1?'s':'')+' here')+')';
+}
+
+function setupNet(code){
+  const socket=io();
+  net={
+    sendState:d=>socket.emit('state',d),
+    sendFood:d=>socket.emit('food',d),
+    sendSkin:d=>socket.emit('skin',d),
+    sendHit:(d,target)=>socket.emit('hit',{...d,target}),
+    sendKilled:(d,target)=>socket.emit('killed',{target}),
+  };
+  socket.on('connect',()=>{ socket.emit('join',code); updateLobbyTag(code); });
+  socket.on('connect_error',()=>{ document.getElementById('lobbyTagText').textContent=code+' (server waking up… retrying)'; });
+  socket.on('disconnect',()=>{ document.getElementById('lobbyTagText').textContent=code+' (reconnecting…)'; });
+  socket.on('state',data=>{
+    const prev=peers[data.id];
+    let rx=data.x, ry=data.y;
+    if(prev && Math.hypot(data.x-prev.rx, data.y-prev.ry)<260){ rx=prev.rx; ry=prev.ry; }
+    peers[data.id]={...data, rx, ry, vkx:prev?prev.vkx||0:0, vky:prev?prev.vky||0:0};
+    updateLobbyTag(code);
+  });
+  socket.on('food',data=>{ if(data.respawn){ if(data.x!=null){food[data.i].x=data.x;food[data.i].y=data.y;} eaten.delete(data.i); } else { eaten.add(data.i); } });
+  socket.on('skin',data=>{ const img=new Image(); img.src=data.img; peerSkins[data.id]={img}; });
+  socket.on('peerLeave',data=>{ delete peers[data.id]; delete peerSkins[data.id]; updateLobbyTag(code); });
+  socket.on('bots',list=>{
+    const nb={};
+    list.forEach(b=>{
+      const prev=bots[b.id];
+      let rx=b.x, ry=b.y;
+      if(prev && Math.hypot(b.x-prev.rx, b.y-prev.ry)<260){ rx=prev.rx; ry=prev.ry; }
+      nb[b.id]={...b, rx, ry, vkx:prev?prev.vkx||0:0, vky:prev?prev.vky||0:0};
+    });
+    bots=nb;
+  });
+  socket.on('hit',data=>{
+    if(!alive)return;
+    me.hp=Math.max(0,me.hp-data.dmg); me.lastDamage=performance.now();
+    // Add to velocity instead of instant teleport — hockey-puck sliding knockback
+    me.kx+=(data.kx||0)*0.8;
+    me.ky+=(data.ky||0)*0.8;
+    if(me.hp<=0){
+      alive=false;
+      document.getElementById('finalLvl').textContent=me.level;
+      document.getElementById('deathMsg').textContent=(data.byName||'Someone')+' finished you off!';
+      document.getElementById('respawn').style.display='flex';
+      net.sendKilled({}, data.from);
+    }
+  });
+  socket.on('killed',()=>{ me.xp+=45; me.level=levelFromXp(me.xp); checkUpgradeSteps(); });
+  setInterval(()=>{ if(alive && skinDataURL) net.sendSkin({img:skinDataURL}); },4000);
+}
+
+function ptrToWorld(){ const dx=pointer.x-canvas.width/2, dy=pointer.y-canvas.height/2; return {dx,dy}; }
+canvas.addEventListener('pointermove',e=>{pointer.x=e.clientX;pointer.y=e.clientY;});
+canvas.addEventListener('pointerdown',e=>{ pointer.x=e.clientX;pointer.y=e.clientY; tryLunge(); });
+
+function tryLunge(){
+  if(!alive||!me||manualPaused)return;
+  const now=performance.now();
+  if(now<me.lungeCooldownUntil)return;
+  const {dx,dy}=ptrToWorld(); const d=Math.hypot(dx,dy)||1;
+  me.lungeDX=dx/d; me.lungeDY=dy/d;
+  me.lungeUntil=now+LUNGE_DURATION;
+  me.lungeEndlagUntil=now+LUNGE_DURATION+LUNGE_ENDLAG;
+  me.lungeCooldownUntil=now+LUNGE_COOLDOWN*me.lungeCdMult;
+  // Burst of momentum in the lunge direction — you slide after your lunge
+  me.kx=me.lungeDX*14; me.ky=me.lungeDY*14;
+  me.hitSet=new Set();
+}
+
+document.getElementById('respawnBtn').onclick=()=>{
+  const sp=randSpawn();
+  me.x=sp.x;me.y=sp.y;me.xp=0;me.level=1;me.lastUpgradeLevel=0;me.upgradeStep=1;
+  me.lungeCooldownUntil=0;me.lungeUntil=0;me.lungeEndlagUntil=0;me.lastDamage=0;
+  me.kx=0;me.ky=0; // clear any lingering velocity
+  Object.assign(me,freshStats()); me.hp=HP_BASE;
+  pendingUpgrades=0; upgradeOpen=false;
+  document.getElementById('respawn').style.display='none';
+  alive=true;
+};
+
+function setManualPaused(v){
+  manualPaused=v;
+  document.getElementById('pauseOverlay').style.display=v?'flex':'none';
+  if(!v){ pointer.x=canvas.width/2; pointer.y=canvas.height/2; }
+}
+document.getElementById('pauseBtn').onclick=()=>setManualPaused(!manualPaused);
+document.getElementById('resumeBtn').onclick=()=>setManualPaused(false);
+addEventListener('keydown',e=>{ if(e.key==='Escape' && alive) setManualPaused(!manualPaused); });
+document.addEventListener('visibilitychange',()=>{ if(document.hidden && alive) setManualPaused(true); });
+
+let lastPresence=0;
+function loop(t){
+  requestAnimationFrame(loop);
+  const gamePaused=manualPaused;
+  if(alive && me && !gamePaused){
+    const now=performance.now();
+    const maxHpTotal=HP_BASE+me.maxHpBonus;
+
+    // HP regen (only outside danger zone — see DoT below)
+    if(now-me.lastDamage>REGEN_DELAY && me.hp<maxHpTotal){
+      me.hp=Math.min(maxHpTotal, me.hp+REGEN_RATE*me.regenMult/60);
+    }
+
+    // --- Ice physics: decay knockback velocity each frame ---
+    me.kx*=VEL_FRICTION; me.ky*=VEL_FRICTION;
+
+    // --- Movement ---
+    let mvx,mvy;
+    if(now<me.lungeUntil){ mvx=me.lungeDX*LUNGE_SPEED; mvy=me.lungeDY*LUNGE_SPEED; }
+    else{
+      const {dx,dy}=ptrToWorld(); const dist=Math.hypot(dx,dy)||1;
+      let speed=BASE_SPEED/(1+me.level*0.05)*me.speedMult;
+      if(now<me.lungeEndlagUntil) speed*=0.42;
+      mvx=dist>6?dx/dist*speed:0; mvy=dist>6?dy/dist*speed:0;
+    }
+    // Combine directional movement with ice-sliding knockback velocity
+    me.x=Math.min(WORLD,Math.max(0,me.x+mvx+me.kx));
+    me.y=Math.min(WORLD,Math.max(0,me.y+mvy+me.ky));
+
+    // --- Danger zone: deal damage and block regen while inside center circle ---
+    const distC=Math.hypot(me.x-WORLD/2,me.y-WORLD/2);
+    if(distC<CENTER_RADIUS){
+      me.hp=Math.max(0,me.hp-CENTER_DOT/60);
+      me.lastDamage=now; // prevents regen while in zone
+      if(me.hp<=0){
+        alive=false;
+        document.getElementById('finalLvl').textContent=me.level;
+        document.getElementById('deathMsg').textContent='The danger zone consumed you!';
+        document.getElementById('respawn').style.display='flex';
+      }
+    }
+
+    const r=radiusFromLevel(me.level,me.bulk);
+
+    // --- Food collection ---
+    for(let i=0;i<food.length;i++){
+      if(eaten.has(i))continue;
+      const f=food[i];
+      const fd=Math.hypot(f.x-me.x,f.y-me.y);
+      if(me.magnet>0 && fd<r+me.magnet){ f.x+=(me.x-f.x)*0.12; f.y+=(me.y-f.y)*0.12; }
+      if(fd<r){
+        eaten.add(i); me.xp+=(f.big?16:6)*me.xpMult; me.level=levelFromXp(me.xp);
+        net&&net.sendFood({i}); checkUpgradeSteps();
+        setTimeout(()=>{
+          if(f.big){
+            const ang=Math.random()*Math.PI*2, rad=Math.sqrt(Math.random())*CENTER_RADIUS;
+            food[i].x=FCX+Math.cos(ang)*rad; food[i].y=FCY+Math.sin(ang)*rad;
+          } else {
+            food[i].x=60+Math.random()*(WORLD-120); food[i].y=60+Math.random()*(WORLD-120);
+          }
+          eaten.delete(i);
+          net&&net.sendFood({i,respawn:true,x:food[i].x,y:food[i].y});
+        }, 9000+Math.random()*6000);
+      }
+    }
+
+    // --- Lunge hit detection ---
+    if(now<me.lungeUntil){
+      for(const id in peers){
+        const p=peers[id]; if(!p||me.hitSet.has(id))continue;
+        const pr=radiusFromLevel(p.level||1,p.bulk||0);
+        const pd=Math.hypot(p.x-me.x,p.y-me.y);
+        if(pd<r+pr){
+          me.hitSet.add(id);
+          const dmg=(16+me.level*1.2)*me.lungeDmgMult;
+          const dx=(p.x-me.x)/(pd||1), dy=(p.y-me.y)/(pd||1);
+          net&&net.sendHit({dmg,byName:me.name,kx:dx*KNOCK,ky:dy*KNOCK}, id);
+          // Immediately predict knockback on their local render position (smooth, no round-trip wait)
+          if(peers[id]){ peers[id].vkx=(peers[id].vkx||0)+dx*KNOCK*0.8; peers[id].vky=(peers[id].vky||0)+dy*KNOCK*0.8; }
+        }
+      }
+      for(const id in bots){
+        const b=bots[id]; if(!b||b.down||me.hitSet.has(id))continue;
+        const br=radiusFromLevel(b.level||1,b.bulk||0);
+        const bd=Math.hypot(b.x-me.x,b.y-me.y);
+        if(bd<r+br){
+          me.hitSet.add(id);
+          const dmg=(16+me.level*1.2)*me.lungeDmgMult;
+          const dx=(b.x-me.x)/(bd||1), dy=(b.y-me.y)/(bd||1);
+          net&&net.sendHit({dmg,byName:me.name,kx:dx*KNOCK,ky:dy*KNOCK}, id);
+          // Predict knockback visually on the bot immediately
+          if(bots[id]){ bots[id].vkx=(bots[id].vkx||0)+dx*KNOCK*0.5; bots[id].vky=(bots[id].vky||0)+dy*KNOCK*0.5; }
+        }
+      }
+    } else {
+      // --- Passive collision push (no lunge active) ---
+      for(const id in peers){
+        const p=peers[id]; if(!p)continue;
+        const pr=radiusFromLevel(p.level||1,p.bulk||0);
+        const dx=me.x-p.x, dy=me.y-p.y, d=Math.hypot(dx,dy)||0.001, minD=r+pr;
+        if(d<minD){ const push=(minD-d)*0.5; me.x+=(dx/d)*push; me.y+=(dy/d)*push; }
+      }
+      for(const id in bots){
+        const b=bots[id]; if(!b||b.down)continue;
+        const br=radiusFromLevel(b.level||1,b.bulk||0);
+        const dx=me.x-b.x, dy=me.y-b.y, d=Math.hypot(dx,dy)||0.001, minD=r+br;
+        if(d<minD){ const push=(minD-d)*0.5; me.x+=(dx/d)*push; me.y+=(dy/d)*push; }
+      }
+      me.x=Math.min(WORLD,Math.max(0,me.x)); me.y=Math.min(WORLD,Math.max(0,me.y));
+    }
+
+    // --- State broadcast ---
+    if(t-lastPresence>55){
+      lastPresence=t;
+      net&&net.sendState({x:me.x,y:me.y,level:me.level,name:me.name,color:me.color,bulk:me.bulk,hp:me.hp,maxHp:maxHpTotal});
+    }
+
+    // --- HUD update ---
+    const inZone=distC<CENTER_RADIUS;
+    document.getElementById('lvlText').textContent='Lv '+me.level;
+    document.getElementById('xpText').textContent=me.xp+' xp';
+    document.getElementById('xpfill').style.width=(xpProgress(me.xp)*100)+'%';
+    document.getElementById('hpfill').style.width=(me.hp/maxHpTotal*100)+'%';
+    document.getElementById('lungeText').textContent=
+      inZone ? '☠️ DANGER ZONE — get out!' :
+      now<me.lungeCooldownUntil ? 'Lunge cooling down…' : 'Lunge ready — click to attack';
+  }
+
+  // --- Smooth interpolation for peers and bots ---
+  // Lower lerp factor (0.18 vs old 0.3) = smoother movement across update packets.
+  // vkx/vky carries locally-predicted knockback with the same ice friction.
+  for(const id in peers){
+    const p=peers[id]; if(!p) continue;
+    p.vkx=(p.vkx||0)*VEL_FRICTION; p.vky=(p.vky||0)*VEL_FRICTION;
+    p.rx+=(p.x-p.rx)*0.18+p.vkx; p.ry+=(p.y-p.ry)*0.18+p.vky;
+  }
+  for(const id in bots){
+    const b=bots[id]; if(!b) continue;
+    b.vkx=(b.vkx||0)*VEL_FRICTION; b.vky=(b.vky||0)*VEL_FRICTION;
+    // Bots update at 8fps from server, slightly faster lerp keeps them on-target
+    b.rx+=(b.x-b.rx)*0.22+b.vkx; b.ry+=(b.y-b.ry)*0.22+b.vky;
+  }
+
+  draw();
+  updateBoard();
+}
+
+function draw(){
+  ctx.fillStyle='#0b1020'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  const camX=(me?me.x:WORLD/2)-canvas.width/2, camY=(me?me.y:WORLD/2)-canvas.height/2;
+  ctx.save(); ctx.translate(-camX,-camY);
+
+  // Grid
+  ctx.strokeStyle='#161d33'; ctx.lineWidth=1;
+  const step=80;
+  for(let x=0;x<=WORLD;x+=step){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,WORLD);ctx.stroke();}
+  for(let y=0;y<=WORLD;y+=step){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WORLD,y);ctx.stroke();}
+  ctx.strokeRect(0,0,WORLD,WORLD);
+
+  // Danger zone: pulsing red fill + animated border + label
+  const pulse=Math.sin(Date.now()*0.003)*0.5+0.5;
+  ctx.beginPath(); ctx.arc(FCX,FCY,CENTER_RADIUS,0,Math.PI*2);
+  ctx.fillStyle=`rgba(220,40,40,${0.04+pulse*0.05})`; ctx.fill();
+  ctx.strokeStyle=`rgba(255,70,70,${0.35+pulse*0.45})`; ctx.lineWidth=3+pulse*3; ctx.stroke();
+  ctx.fillStyle=`rgba(255,110,90,${0.45+pulse*0.35})`;
+  ctx.font='bold 13px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('☠ DANGER ZONE', FCX, FCY-CENTER_RADIUS+22);
+
+  // Food pellets
+  for(let i=0;i<food.length;i++){
+    if(eaten.has(i))continue;
+    const f=food[i];
+    ctx.fillStyle=f.c; ctx.beginPath(); ctx.arc(f.x,f.y,f.big?7:4,0,Math.PI*2); ctx.fill();
+    if(f.big){ ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.lineWidth=1.5; ctx.stroke(); }
+  }
+
+  // Peers
+  for(const id in peers){
+    const p=peers[id]; if(!p)continue;
+    const skin=peerSkins[id]&&peerSkins[id].img;
+    drawBlob(p.rx,p.ry,radiusFromLevel(p.level||1,p.bulk||0),p.color||'#888',p.name||'?',p.level||1,
+      (p.hp!=null&&p.maxHp)?p.hp/p.maxHp:null, skin&&skin.complete?skin:null);
+  }
+
+  // Bots
+  for(const id in bots){
+    const b=bots[id]; if(!b||b.down)continue;
+    drawBlob(b.rx,b.ry,radiusFromLevel(b.level||1,b.bulk||0),b.color,b.name,b.level,b.hp/b.maxHp,null);
+  }
+
+  // Local player
+  if(me && alive) drawBlob(me.x,me.y,radiusFromLevel(me.level,me.bulk),me.color,me.name+' (you)',me.level,
+      me.hp/(HP_BASE+me.maxHpBonus), ownSkin&&ownSkin.complete?ownSkin:null);
+
+  ctx.restore();
+
+  // Screen vignette when inside danger zone
+  if(me && alive){
+    const distC=Math.hypot(me.x-WORLD/2,me.y-WORLD/2);
+    if(distC<CENTER_RADIUS){
+      const vPulse=0.35+0.35*Math.sin(Date.now()*0.005);
+      const grad=ctx.createRadialGradient(
+        canvas.width/2,canvas.height/2,canvas.width*0.2,
+        canvas.width/2,canvas.height/2,canvas.width*0.72);
+      grad.addColorStop(0,'rgba(200,0,0,0)');
+      grad.addColorStop(1,`rgba(200,0,0,${vPulse})`);
+      ctx.fillStyle=grad; ctx.fillRect(0,0,canvas.width,canvas.height);
+    }
+  }
+}
+
+function drawBlob(x,y,r,color,name,level,hpFrac,skinImg){
+  ctx.save(); ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.closePath(); ctx.clip();
+  if(skinImg){ ctx.imageSmoothingEnabled=false; ctx.drawImage(skinImg,x-r,y-r,r*2,r*2); }
+  else { ctx.fillStyle=color; ctx.fillRect(x-r,y-r,r*2,r*2); }
+  ctx.restore();
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.lineWidth=2; ctx.strokeStyle='rgba(0,0,0,.3)'; ctx.stroke();
+  ctx.fillStyle='#0a0a12'; ctx.font='bold '+Math.max(10,r*0.4)+'px sans-serif'; ctx.textAlign='center';
+  ctx.fillText(name+' L'+level, x, y+4);
+  if(hpFrac!=null){
+    ctx.fillStyle='rgba(0,0,0,.4)'; ctx.fillRect(x-r,y-r-10,r*2,5);
+    ctx.fillStyle=hpFrac>0.3?'#5ee89a':'#ff6b6b'; ctx.fillRect(x-r,y-r-10,r*2*Math.max(0,hpFrac),5);
+  }
+}
+
+function updateBoard(){
+  const all=[...(me?[{name:me.name+' (you)',level:me.level}]:[]),
+    ...Object.values(peers).map(p=>({name:p.name||'?',level:p.level||1}))];
+  all.sort((a,b)=>b.level-a.level);
+  document.getElementById('rows').innerHTML=all.slice(0,6).map(p=>
+    `<div class="row"><span>${p.name}</span><span>Lv ${p.level}</span></div>`).join('');
+}
+</script>
+</body>
+</html>
