@@ -26,13 +26,20 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 #clearSkin{margin-top:8px;font-size:11px;background:transparent;border:1px solid var(--panel-b);color:var(--sub);padding:5px 10px;border-radius:6px;cursor:pointer;}
 #play{width:100%;padding:12px;border:none;border-radius:8px;background:var(--accent);color:#04231d;font-weight:700;font-size:15px;cursor:pointer;margin-top:14px;}
 #status{margin-top:10px;font-size:11px;color:var(--sub);}
-#hud{position:fixed;left:12px;bottom:12px;z-index:5;background:var(--panel);border:1px solid var(--panel-b);border-radius:10px;padding:8px 12px;font-size:13px;display:none;min-width:170px;}
+
+#hud{position:fixed;left:12px;bottom:12px;z-index:5;background:var(--panel);border:1px solid var(--panel-b);border-radius:10px;padding:8px 12px;font-size:13px;display:none;min-width:180px;}
 #hud .lvl{font-weight:700;color:var(--accent);}
-#xpbar{height:6px;background:var(--panel-b);border-radius:4px;margin-top:6px;overflow:hidden;}
-#xpfill{height:100%;background:var(--accent);width:0%;}
-#hpbar{height:8px;background:var(--panel-b);border-radius:4px;margin-top:6px;overflow:hidden;}
-#hpfill{height:100%;background:#ff6b6b;width:100%;}
-#lungeText{font-size:10px;color:var(--sub);margin-top:4px;}
+.bar-wrap{margin-top:5px;}
+.bar-lbl{display:flex;justify-content:space-between;font-size:9px;color:var(--sub);margin-bottom:2px;}
+.bar-track{height:6px;background:var(--panel-b);border-radius:4px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;width:0%;}
+#xpfill{background:var(--accent);}
+#hpfill{background:#ff6b6b;}
+#lungefill{background:var(--accent2);}
+#hpbar-track{height:8px;}
+#shieldRow{font-size:10px;margin-top:5px;display:none;}
+#zoneWarn{font-size:10px;color:#ff5555;margin-top:4px;display:none;font-weight:700;}
+
 #lobbyTag{position:fixed;left:12px;top:12px;z-index:5;background:var(--panel);border:1px solid var(--panel-b);border-radius:10px;padding:6px 10px;font-size:11px;color:var(--sub);display:none;}
 #pauseBtn{position:fixed;right:12px;bottom:12px;z-index:5;background:var(--panel);border:1px solid var(--panel-b);border-radius:50%;width:40px;height:40px;font-size:16px;cursor:pointer;display:none;color:var(--text);}
 #board{position:fixed;right:12px;top:12px;z-index:5;background:var(--panel);border:1px solid var(--panel-b);border-radius:10px;padding:10px 12px;font-size:12px;display:none;min-width:150px;}
@@ -41,16 +48,24 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 #respawn,#pauseOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.66);z-index:9;}
 #respawn .box,#pauseOverlay .box{background:var(--panel);border:1px solid var(--panel-b);border-radius:14px;padding:24px;text-align:center;max-width:420px;}
 #respawn button,#pauseOverlay button{margin-top:12px;padding:10px 18px;border:none;border-radius:8px;background:var(--accent2);color:#2a0716;font-weight:700;cursor:pointer;}
-#upgradeOverlay{position:fixed;left:12px;top:70px;z-index:9;display:none;max-width:230px;}
+#upgradeOverlay{position:fixed;left:12px;top:70px;z-index:9;display:none;max-width:240px;}
 #upgradeOverlay .box{background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:12px;text-align:left;box-shadow:0 4px 18px rgba(0,0,0,.35);}
 #upgradeOverlay .hdr{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px;}
 #upgradeCards{display:flex;flex-direction:column;gap:6px;}
 .upcard{width:100%;padding:7px 9px;border:1px solid var(--panel-b);border-radius:8px;cursor:pointer;background:rgba(127,127,127,.08);color:var(--text);display:flex;align-items:center;gap:8px;text-align:left;}
-.upcard:hover{border-color:var(--accent);}
+.upcard:hover{background:rgba(127,127,127,.18);}
+.upcard.t2{border-color:#5ee1c880;}
+.upcard.t2:hover{border-color:var(--accent);}
+.upcard.t3{border-color:#ffd16680;}
+.upcard.t3:hover{border-color:#ffd166;}
 .upcard .ic{font-size:17px;flex-shrink:0;}
 .upcard .txt{display:flex;flex-direction:column;min-width:0;}
-.upcard .nm{font-weight:700;font-size:11px;}
+.upcard .nm{font-weight:700;font-size:11px;display:flex;align-items:center;gap:4px;}
 .upcard .ds{font-size:9.5px;color:var(--sub);line-height:1.25;}
+.tier-badge{font-size:8px;padding:1px 4px;border-radius:3px;font-weight:700;}
+.t1 .tier-badge{background:#333;color:#888;}
+.t2 .tier-badge{background:#1a3a3a;color:var(--accent);}
+.t3 .tier-badge{background:#3a3000;color:#ffd166;}
 </style>
 </head>
 <body>
@@ -77,9 +92,20 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 <div id="lobbyTag">Lobby: <b id="lobbyTagText"></b></div>
 <div id="hud">
   <div><span class="lvl" id="lvlText">Lv 1</span> · <span id="xpText">0 xp</span></div>
-  <div id="xpbar"><div id="xpfill"></div></div>
-  <div id="hpbar"><div id="hpfill"></div></div>
-  <div id="lungeText">Lunge ready — click to attack</div>
+  <div class="bar-wrap">
+    <div class="bar-lbl"><span>XP</span></div>
+    <div class="bar-track"><div class="bar-fill" id="xpfill"></div></div>
+  </div>
+  <div class="bar-wrap">
+    <div class="bar-lbl"><span>❤️ HP</span><span id="hpText"></span></div>
+    <div class="bar-track" id="hpbar-track"><div class="bar-fill" id="hpfill" style="width:100%"></div></div>
+  </div>
+  <div class="bar-wrap">
+    <div class="bar-lbl"><span>⚔️ Lunge</span><span id="lungeTimerText">READY</span></div>
+    <div class="bar-track"><div class="bar-fill" id="lungefill" style="width:100%"></div></div>
+  </div>
+  <div id="shieldRow"></div>
+  <div id="zoneWarn">☠️ DANGER ZONE — get out!</div>
 </div>
 <button id="pauseBtn">⏸</button>
 <div id="board"><h3>Leaderboard</h3><div id="rows"></div></div>
@@ -133,17 +159,15 @@ const lobbyInput=document.getElementById('lobby');
 lobbyInput.value=randCode();
 document.getElementById('randomLobby').onclick=()=>{lobbyInput.value=randCode();};
 
+// ── Constants ──────────────────────────────────────────────────────────────
 const WORLD=3600, OUTER_FOOD=300, CENTER_FOOD=70, CENTER_RADIUS=520;
 const BASE_SPEED=2.3, LUNGE_SPEED=10.5, LUNGE_DURATION=220, LUNGE_ENDLAG=280, LUNGE_COOLDOWN=1400, KNOCK=44;
-const HP_BASE=100, REGEN_DELAY=4000, REGEN_RATE=9;
-// Ice physics: how much velocity survives each frame. 0.91 = ~1.2sec slide-out at 60fps.
-const VEL_FRICTION=0.91;
-// Danger zone: ~7 hp/sec expressed per-frame at 60fps
-const CENTER_DOT=7;
+const HP_BASE=100, REGEN_DELAY=5500, REGEN_RATE=3; // regen nerfed: 3 hp/sec, 5.5s delay
+const VEL_FRICTION=0.91;   // ice-slide friction per frame
+const CENTER_DOT=7;         // hp/sec damage inside danger zone
 
+// ── RNG & Food ────────────────────────────────────────────────────────────
 function mulberry32(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
-// Position generation must advance the RNG exactly like the server's (2 draws per outer pellet: x, y).
-// Color is derived from the index instead of drawn from the RNG, so it never desyncs the sequence.
 const rngA=mulberry32(42);
 let food=[];
 for(let i=0;i<OUTER_FOOD;i++){food.push({x:rngA()*WORLD,y:rngA()*WORLD,big:false,c:'hsl('+((i*63)%360)+',70%,60%)'});}
@@ -154,53 +178,114 @@ for(let i=0;i<CENTER_FOOD;i++){
 }
 const eaten=new Set();
 
+// ── Helpers ───────────────────────────────────────────────────────────────
 function levelFromXp(xp){
   let lvl=1, needed=0, step=130;
   while(xp>=needed+step){ needed+=step; lvl++; step+=45; }
   return lvl;
 }
-// Returns 0..1 progress within the current level (correctly handles growing XP steps)
 function xpProgress(xp){
   let needed=0, step=130;
   while(xp>=needed+step){ needed+=step; step+=45; }
   return (xp-needed)/step;
 }
 function radiusFromLevel(lv,bulk){return (16+lv*2.4)*(1+(bulk||0));}
-function freshStats(){return {speedMult:1,magnet:0,xpMult:1,bulk:0,lungeDmgMult:1,lungeCdMult:1,regenMult:1,maxHpBonus:0};}
 
-const UPGRADES=[
-  {id:'swift',name:'Swift',desc:'+12% move speed',icon:'⚡',apply:m=>m.speedMult*=1.12},
-  {id:'fury',name:'Fury',desc:'-15% lunge cooldown',icon:'🔥',apply:m=>m.lungeCdMult*=0.85},
-  {id:'power',name:'Power Strike',desc:'+25% lunge damage',icon:'💥',apply:m=>m.lungeDmgMult*=1.25},
-  {id:'vitality',name:'Vitality',desc:'+25 max HP, heals now',icon:'❤️',apply:m=>{m.maxHpBonus+=25;m.hp=Math.min(m.hp+25,HP_BASE+m.maxHpBonus);}},
-  {id:'regen',name:'Regeneration',desc:'+50% hp regen rate',icon:'🌿',apply:m=>m.regenMult*=1.5},
-  {id:'magnet',name:'Magnetism',desc:'+50 pellet pull range',icon:'🧲',apply:m=>m.magnet+=50},
-  {id:'feast',name:'Feast',desc:'+25% xp from pellets',icon:'🍒',apply:m=>m.xpMult*=1.25},
-  {id:'bulk',name:'Bulk Up',desc:'+8% size',icon:'💪',apply:m=>m.bulk+=0.08},
+function freshStats(){
+  return {
+    speedMult:1, magnet:0, xpMult:1, bulk:0,
+    lungeDmgMult:1, lungeCdMult:1, lungeDurMult:1,
+    regenMult:1, maxHpBonus:0,
+    vampiric:0,          // % of lunge damage returned as HP
+    berserk:false,       // +35% speed below 35% HP
+    shockwave:false,     // lunge blasts nearby enemies on activation
+    shieldMax:false,     // has the shield upgrade
+    shieldActive:false,  // shield is currently up
+    shieldRechargeAt:0,  // timestamp when shield comes back
+    orbiterCount:0,      // number of orbiting minions
+    orbiters:null,       // live orbiter state array
+  };
+}
+
+// ── Upgrade pool (tiered) ─────────────────────────────────────────────────
+// tier 1 = always available | tier 2 = unlocks at lv 3 | tier 3 = unlocks at lv 6
+const UPGRADE_POOL=[
+  // ── Tier 1 ──
+  {tier:1,id:'swift',     name:'Swift',        desc:'+12% move speed',               icon:'⚡', apply:m=>m.speedMult*=1.12},
+  {tier:1,id:'magnet',    name:'Magnetism',    desc:'+50 pellet pull range',          icon:'🧲', apply:m=>m.magnet+=50},
+  {tier:1,id:'feast',     name:'Feast',        desc:'+25% XP from pellets',           icon:'🍒', apply:m=>m.xpMult*=1.25},
+  {tier:1,id:'regen',     name:'Regeneration', desc:'+60% HP regen rate',             icon:'🌿', apply:m=>m.regenMult*=1.6},
+  {tier:1,id:'bulk',      name:'Bulk Up',      desc:'+8% size',                       icon:'💪', apply:m=>m.bulk+=0.08},
+  // ── Tier 2 ──
+  {tier:2,id:'fury',      name:'Fury',         desc:'-15% lunge cooldown',            icon:'🔥', apply:m=>m.lungeCdMult*=0.85},
+  {tier:2,id:'power',     name:'Power Strike', desc:'+25% lunge damage',              icon:'💥', apply:m=>m.lungeDmgMult*=1.25},
+  {tier:2,id:'vitality',  name:'Vitality',     desc:'+25 max HP, heals now',          icon:'❤️', apply:m=>{m.maxHpBonus+=25;m.hp=Math.min(m.hp+25,HP_BASE+m.maxHpBonus);}},
+  {tier:2,id:'vampire',   name:'Vampiric',     desc:'Lunge heals 15% of dmg dealt',  icon:'🧛', apply:m=>m.vampiric+=0.15},
+  {tier:2,id:'afterburn', name:'Afterburner',  desc:'+40% lunge distance & speed',   icon:'🚀', apply:m=>m.lungeDurMult*=1.4},
+  {tier:2,id:'berserk',   name:'Berserk',      desc:'Below 35% HP: +35% speed',      icon:'😡', apply:m=>m.berserk=true},
+  // ── Tier 3 ──
+  {tier:3,id:'minions',   name:'Minions',      desc:'Summon orbiting mini-blob (3x)',  icon:'🫧',
+    maxStack:3, apply:m=>{ m.orbiterCount=(m.orbiterCount||0)+1; m.orbiters=null; }},
+  {tier:3,id:'shield',    name:'Shield',       desc:'Absorbs 1 hit, recharges 25s',   icon:'🛡️',
+    apply:m=>{ m.shieldMax=true; m.shieldActive=true; m.shieldRechargeAt=0; }},
+  {tier:3,id:'shockwave', name:'Shockwave',    desc:'Lunge blasts nearby enemies',    icon:'💫', apply:m=>m.shockwave=true},
 ];
+
 let pendingUpgrades=0, upgradeOpen=false;
+
+function pickUpgrades(count=3){
+  const lv=me.level;
+  const pool=UPGRADE_POOL.filter(u=>{
+    if(u.tier===2 && lv<3) return false;
+    if(u.tier===3 && lv<6) return false;
+    if(u.id==='minions' && (me.orbiterCount||0)>=(u.maxStack||1)) return false;
+    return true;
+  });
+  // Weighted: at high level, tier 2/3 become much more likely
+  function w(u){ return u.tier===1 ? Math.max(0.4, 3.5-lv*0.22) : u.tier===2 ? 1+lv*0.09 : Math.max(0.5, lv*0.16); }
+  const weighted=pool.map(u=>({u,w:w(u)}));
+  const picks=[];
+  while(picks.length<count && weighted.length>0){
+    let total=weighted.reduce((s,x)=>s+x.w,0), r=Math.random()*total;
+    for(let i=0;i<weighted.length;i++){
+      r-=weighted[i].w;
+      if(r<=0){ picks.push(weighted[i].u); weighted.splice(i,1); break; }
+    }
+  }
+  return picks;
+}
+
 function showUpgradePicker(){
   upgradeOpen=true;
-  const pool=[...UPGRADES], picks=[];
-  while(picks.length<3 && pool.length) picks.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+  const picks=pickUpgrades(3);
   const wrap=document.getElementById('upgradeCards'); wrap.innerHTML='';
+  const TIER_LABEL=['','I','II','III'];
   picks.forEach(u=>{
-    const d=document.createElement('div'); d.className='upcard';
-    d.innerHTML=`<div class="ic">${u.icon}</div><div class="txt"><div class="nm">${u.name}</div><div class="ds">${u.desc}</div></div>`;
-    d.onclick=()=>{ u.apply(me); pendingUpgrades--;
+    const d=document.createElement('div'); d.className='upcard t'+u.tier;
+    d.innerHTML=`<div class="ic">${u.icon}</div><div class="txt">
+      <div class="nm">${u.name}<span class="tier-badge">T${TIER_LABEL[u.tier]}</span></div>
+      <div class="ds">${u.desc}</div></div>`;
+    d.onclick=()=>{
+      u.apply(me); pendingUpgrades--;
       document.getElementById('upgradeOverlay').style.display='none'; upgradeOpen=false;
-      if(pendingUpgrades>0) showUpgradePicker(); };
+      if(pendingUpgrades>0) showUpgradePicker();
+    };
     wrap.appendChild(d);
   });
   document.getElementById('upgradeOverlay').style.display='flex';
 }
+
 function checkUpgradeSteps(){
   while(me.level-me.lastUpgradeLevel>=me.upgradeStep){
-    pendingUpgrades++; me.lastUpgradeLevel+=me.upgradeStep; me.upgradeStep+=1;
+    pendingUpgrades++;
+    me.lastUpgradeLevel+=me.upgradeStep;
+    // Frequent early (step stays 1 until lv 5), then grows
+    if(me.lastUpgradeLevel>=5) me.upgradeStep+=1;
   }
   if(pendingUpgrades>0 && !upgradeOpen) showUpgradePicker();
 }
 
+// ── Canvas & state ────────────────────────────────────────────────────────
 const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
 function resize(){canvas.width=innerWidth;canvas.height=innerHeight;}
 addEventListener('resize',resize);resize();
@@ -215,8 +300,9 @@ document.getElementById('play').onclick=()=>{
   const code=(lobbyInput.value||'ABCD').trim().toUpperCase().slice(0,6);
   const sp=randSpawn();
   me={x:sp.x,y:sp.y,xp:0,level:1,lastUpgradeLevel:0,upgradeStep:1,
-      hp:HP_BASE,lastDamage:0,lungeCooldownUntil:0,lungeUntil:0,lungeEndlagUntil:0,lungeDX:0,lungeDY:0,
-      kx:0,ky:0, // knockback/ice velocity
+      hp:HP_BASE,lastDamage:0,
+      lungeCooldownUntil:0,lungeUntil:0,lungeEndlagUntil:0,lungeDX:0,lungeDY:0,
+      kx:0,ky:0,
       hitSet:new Set(),
       name:nm,color:chosenColor,...freshStats()};
   skinDataURL=editor.toDataURL('image/png');
@@ -237,6 +323,7 @@ function updateLobbyTag(code){
   document.getElementById('lobbyTagText').textContent=code+' ('+(n===0?'live — waiting for peers':n+' other player'+(n>1?'s':'')+' here')+')';
 }
 
+// ── Networking ────────────────────────────────────────────────────────────
 function setupNet(code){
   const socket=io();
   net={
@@ -252,8 +339,8 @@ function setupNet(code){
   socket.on('state',data=>{
     const prev=peers[data.id];
     let rx=data.x, ry=data.y;
-    if(prev && Math.hypot(data.x-prev.rx, data.y-prev.ry)<260){ rx=prev.rx; ry=prev.ry; }
-    peers[data.id]={...data, rx, ry, vkx:prev?prev.vkx||0:0, vky:prev?prev.vky||0:0};
+    if(prev && Math.hypot(data.x-prev.rx,data.y-prev.ry)<260){ rx=prev.rx; ry=prev.ry; }
+    peers[data.id]={...data,rx,ry,vkx:prev?prev.vkx||0:0,vky:prev?prev.vky||0:0};
     updateLobbyTag(code);
   });
   socket.on('food',data=>{ if(data.respawn){ if(data.x!=null){food[data.i].x=data.x;food[data.i].y=data.y;} eaten.delete(data.i); } else { eaten.add(data.i); } });
@@ -264,15 +351,22 @@ function setupNet(code){
     list.forEach(b=>{
       const prev=bots[b.id];
       let rx=b.x, ry=b.y;
-      if(prev && Math.hypot(b.x-prev.rx, b.y-prev.ry)<260){ rx=prev.rx; ry=prev.ry; }
-      nb[b.id]={...b, rx, ry, vkx:prev?prev.vkx||0:0, vky:prev?prev.vky||0:0};
+      if(prev && Math.hypot(b.x-prev.rx,b.y-prev.ry)<260){ rx=prev.rx; ry=prev.ry; }
+      nb[b.id]={...b,rx,ry,vkx:prev?prev.vkx||0:0,vky:prev?prev.vky||0:0};
     });
     bots=nb;
   });
   socket.on('hit',data=>{
     if(!alive)return;
-    me.hp=Math.max(0,me.hp-data.dmg); me.lastDamage=performance.now();
-    // Add to velocity instead of instant teleport — hockey-puck sliding knockback
+    // Shield absorbs the hit entirely
+    if(me.shieldActive){
+      me.shieldActive=false;
+      me.shieldRechargeAt=performance.now()+25000;
+      return;
+    }
+    me.hp=Math.max(0,me.hp-data.dmg);
+    me.lastDamage=performance.now();
+    // Velocity-based knockback (ice physics)
     me.kx+=(data.kx||0)*0.8;
     me.ky+=(data.ky||0)*0.8;
     if(me.hp<=0){
@@ -280,14 +374,15 @@ function setupNet(code){
       document.getElementById('finalLvl').textContent=me.level;
       document.getElementById('deathMsg').textContent=(data.byName||'Someone')+' finished you off!';
       document.getElementById('respawn').style.display='flex';
-      net.sendKilled({}, data.from);
+      net.sendKilled({},data.from);
     }
   });
   socket.on('killed',()=>{ me.xp+=45; me.level=levelFromXp(me.xp); checkUpgradeSteps(); });
-  setInterval(()=>{ if(alive && skinDataURL) net.sendSkin({img:skinDataURL}); },4000);
+  setInterval(()=>{ if(alive&&skinDataURL) net.sendSkin({img:skinDataURL}); },4000);
 }
 
-function ptrToWorld(){ const dx=pointer.x-canvas.width/2, dy=pointer.y-canvas.height/2; return {dx,dy}; }
+// ── Input ─────────────────────────────────────────────────────────────────
+function ptrToWorld(){ return {dx:pointer.x-canvas.width/2, dy:pointer.y-canvas.height/2}; }
 canvas.addEventListener('pointermove',e=>{pointer.x=e.clientX;pointer.y=e.clientY;});
 canvas.addEventListener('pointerdown',e=>{ pointer.x=e.clientX;pointer.y=e.clientY; tryLunge(); });
 
@@ -297,69 +392,95 @@ function tryLunge(){
   if(now<me.lungeCooldownUntil)return;
   const {dx,dy}=ptrToWorld(); const d=Math.hypot(dx,dy)||1;
   me.lungeDX=dx/d; me.lungeDY=dy/d;
-  me.lungeUntil=now+LUNGE_DURATION;
-  me.lungeEndlagUntil=now+LUNGE_DURATION+LUNGE_ENDLAG;
+  const dur=LUNGE_DURATION*(me.lungeDurMult||1);
+  me.lungeUntil=now+dur;
+  me.lungeEndlagUntil=now+dur+LUNGE_ENDLAG;
   me.lungeCooldownUntil=now+LUNGE_COOLDOWN*me.lungeCdMult;
-  // Burst of momentum in the lunge direction — you slide after your lunge
-  me.kx=me.lungeDX*14; me.ky=me.lungeDY*14;
+  me.kx=me.lungeDX*14; me.ky=me.lungeDY*14; // momentum burst
   me.hitSet=new Set();
+  // Shockwave: blast nearby enemies on lunge activation
+  if(me.shockwave){
+    const r=radiusFromLevel(me.level,me.bulk);
+    for(const id in peers){
+      const p=peers[id]; if(!p)continue;
+      const pd=Math.hypot(p.x-me.x,p.y-me.y);
+      if(pd<r+130){ const ex=(p.x-me.x)/(pd||1), ey=(p.y-me.y)/(pd||1);
+        net&&net.sendHit({dmg:6,byName:me.name,kx:ex*70,ky:ey*70},id);
+        if(peers[id]){peers[id].vkx=(peers[id].vkx||0)+ex*70*0.8;peers[id].vky=(peers[id].vky||0)+ey*70*0.8;}
+      }
+    }
+    for(const id in bots){
+      const b=bots[id]; if(!b||b.down)continue;
+      const bd=Math.hypot(b.x-me.x,b.y-me.y);
+      if(bd<r+130){ const ex=(b.x-me.x)/(bd||1), ey=(b.y-me.y)/(bd||1);
+        net&&net.sendHit({dmg:6,byName:me.name,kx:ex*70,ky:ey*70},id);
+        if(bots[id]){bots[id].vkx=(bots[id].vkx||0)+ex*70*0.5;bots[id].vky=(bots[id].vky||0)+ey*70*0.5;}
+      }
+    }
+  }
 }
 
+// ── Respawn ───────────────────────────────────────────────────────────────
 document.getElementById('respawnBtn').onclick=()=>{
   const sp=randSpawn();
   me.x=sp.x;me.y=sp.y;me.xp=0;me.level=1;me.lastUpgradeLevel=0;me.upgradeStep=1;
   me.lungeCooldownUntil=0;me.lungeUntil=0;me.lungeEndlagUntil=0;me.lastDamage=0;
-  me.kx=0;me.ky=0; // clear any lingering velocity
+  me.kx=0;me.ky=0;
   Object.assign(me,freshStats()); me.hp=HP_BASE;
   pendingUpgrades=0; upgradeOpen=false;
   document.getElementById('respawn').style.display='none';
+  document.getElementById('upgradeOverlay').style.display='none';
   alive=true;
 };
 
+// ── Pause ─────────────────────────────────────────────────────────────────
 function setManualPaused(v){
   manualPaused=v;
   document.getElementById('pauseOverlay').style.display=v?'flex':'none';
-  if(!v){ pointer.x=canvas.width/2; pointer.y=canvas.height/2; }
+  if(!v){pointer.x=canvas.width/2;pointer.y=canvas.height/2;}
 }
 document.getElementById('pauseBtn').onclick=()=>setManualPaused(!manualPaused);
 document.getElementById('resumeBtn').onclick=()=>setManualPaused(false);
-addEventListener('keydown',e=>{ if(e.key==='Escape' && alive) setManualPaused(!manualPaused); });
-document.addEventListener('visibilitychange',()=>{ if(document.hidden && alive) setManualPaused(true); });
+addEventListener('keydown',e=>{ if(e.key==='Escape'&&alive) setManualPaused(!manualPaused); });
+document.addEventListener('visibilitychange',()=>{ if(document.hidden&&alive) setManualPaused(true); });
 
+// ── Main loop ─────────────────────────────────────────────────────────────
 let lastPresence=0;
 function loop(t){
   requestAnimationFrame(loop);
-  const gamePaused=manualPaused;
-  if(alive && me && !gamePaused){
+  if(alive&&me&&!manualPaused){
     const now=performance.now();
     const maxHpTotal=HP_BASE+me.maxHpBonus;
 
-    // HP regen (only outside danger zone — see DoT below)
-    if(now-me.lastDamage>REGEN_DELAY && me.hp<maxHpTotal){
-      me.hp=Math.min(maxHpTotal, me.hp+REGEN_RATE*me.regenMult/60);
-    }
+    // Shield recharge
+    if(me.shieldMax&&!me.shieldActive&&now>=me.shieldRechargeAt) me.shieldActive=true;
 
-    // --- Ice physics: decay knockback velocity each frame ---
+    // HP regen (slow — 3 hp/sec after 5.5s out of danger)
+    if(now-me.lastDamage>REGEN_DELAY&&me.hp<maxHpTotal)
+      me.hp=Math.min(maxHpTotal,me.hp+REGEN_RATE*me.regenMult/60);
+
+    // Ice physics: decay knockback velocity
     me.kx*=VEL_FRICTION; me.ky*=VEL_FRICTION;
 
-    // --- Movement ---
+    // Movement
     let mvx,mvy;
     if(now<me.lungeUntil){ mvx=me.lungeDX*LUNGE_SPEED; mvy=me.lungeDY*LUNGE_SPEED; }
     else{
       const {dx,dy}=ptrToWorld(); const dist=Math.hypot(dx,dy)||1;
       let speed=BASE_SPEED/(1+me.level*0.05)*me.speedMult;
+      if(me.berserk&&me.hp/maxHpTotal<0.35) speed*=1.35;
       if(now<me.lungeEndlagUntil) speed*=0.42;
       mvx=dist>6?dx/dist*speed:0; mvy=dist>6?dy/dist*speed:0;
     }
-    // Combine directional movement with ice-sliding knockback velocity
     me.x=Math.min(WORLD,Math.max(0,me.x+mvx+me.kx));
     me.y=Math.min(WORLD,Math.max(0,me.y+mvy+me.ky));
 
-    // --- Danger zone: deal damage and block regen while inside center circle ---
+    // Danger zone DoT
     const distC=Math.hypot(me.x-WORLD/2,me.y-WORLD/2);
-    if(distC<CENTER_RADIUS){
+    const inZone=distC<CENTER_RADIUS;
+    if(inZone){
       me.hp=Math.max(0,me.hp-CENTER_DOT/60);
-      me.lastDamage=now; // prevents regen while in zone
+      me.lastDamage=now;
       if(me.hp<=0){
         alive=false;
         document.getElementById('finalLvl').textContent=me.level;
@@ -370,29 +491,59 @@ function loop(t){
 
     const r=radiusFromLevel(me.level,me.bulk);
 
-    // --- Food collection ---
+    // Food collection
     for(let i=0;i<food.length;i++){
       if(eaten.has(i))continue;
       const f=food[i];
       const fd=Math.hypot(f.x-me.x,f.y-me.y);
-      if(me.magnet>0 && fd<r+me.magnet){ f.x+=(me.x-f.x)*0.12; f.y+=(me.y-f.y)*0.12; }
+      if(me.magnet>0&&fd<r+me.magnet){f.x+=(me.x-f.x)*0.12;f.y+=(me.y-f.y)*0.12;}
       if(fd<r){
         eaten.add(i); me.xp+=(f.big?16:6)*me.xpMult; me.level=levelFromXp(me.xp);
         net&&net.sendFood({i}); checkUpgradeSteps();
         setTimeout(()=>{
-          if(f.big){
-            const ang=Math.random()*Math.PI*2, rad=Math.sqrt(Math.random())*CENTER_RADIUS;
-            food[i].x=FCX+Math.cos(ang)*rad; food[i].y=FCY+Math.sin(ang)*rad;
-          } else {
-            food[i].x=60+Math.random()*(WORLD-120); food[i].y=60+Math.random()*(WORLD-120);
-          }
-          eaten.delete(i);
-          net&&net.sendFood({i,respawn:true,x:food[i].x,y:food[i].y});
-        }, 9000+Math.random()*6000);
+          if(f.big){const ang=Math.random()*Math.PI*2,rad=Math.sqrt(Math.random())*CENTER_RADIUS;food[i].x=FCX+Math.cos(ang)*rad;food[i].y=FCY+Math.sin(ang)*rad;}
+          else{food[i].x=60+Math.random()*(WORLD-120);food[i].y=60+Math.random()*(WORLD-120);}
+          eaten.delete(i); net&&net.sendFood({i,respawn:true,x:food[i].x,y:food[i].y});
+        },9000+Math.random()*6000);
       }
     }
 
-    // --- Lunge hit detection ---
+    // Orbiting minions
+    if(me.orbiterCount>0){
+      if(!me.orbiters||me.orbiters.length!==me.orbiterCount)
+        me.orbiters=Array.from({length:me.orbiterCount},(_,i)=>({angle:(i/me.orbiterCount)*Math.PI*2,dmgCooldown:0,x:0,y:0}));
+      const orbitR=r*2.3, orbSpeed=0.042, orbR=r*0.42;
+      me.orbiters.forEach(orb=>{
+        orb.angle+=orbSpeed;
+        orb.x=me.x+Math.cos(orb.angle)*orbitR;
+        orb.y=me.y+Math.sin(orb.angle)*orbitR;
+        if(now>=orb.dmgCooldown){
+          let hit=false;
+          for(const id in peers){
+            if(hit)break;
+            const p=peers[id]; if(!p)continue;
+            const pr=radiusFromLevel(p.level||1,p.bulk||0);
+            const od=Math.hypot(p.x-orb.x,p.y-orb.y);
+            if(od<pr+orbR){
+              net&&net.sendHit({dmg:7,byName:me.name+' (minion)',kx:(p.x-orb.x)/(od||1)*14,ky:(p.y-orb.y)/(od||1)*14},id);
+              orb.dmgCooldown=now+700; hit=true;
+            }
+          }
+          for(const id in bots){
+            if(hit)break;
+            const b=bots[id]; if(!b||b.down)continue;
+            const br=radiusFromLevel(b.level||1,b.bulk||0);
+            const od=Math.hypot(b.x-orb.x,b.y-orb.y);
+            if(od<br+orbR){
+              net&&net.sendHit({dmg:7,byName:me.name+' (minion)',kx:(b.x-orb.x)/(od||1)*14,ky:(b.y-orb.y)/(od||1)*14},id);
+              orb.dmgCooldown=now+700; hit=true;
+            }
+          }
+        }
+      });
+    }
+
+    // Lunge hit detection
     if(now<me.lungeUntil){
       for(const id in peers){
         const p=peers[id]; if(!p||me.hitSet.has(id))continue;
@@ -402,9 +553,9 @@ function loop(t){
           me.hitSet.add(id);
           const dmg=(16+me.level*1.2)*me.lungeDmgMult;
           const dx=(p.x-me.x)/(pd||1), dy=(p.y-me.y)/(pd||1);
-          net&&net.sendHit({dmg,byName:me.name,kx:dx*KNOCK,ky:dy*KNOCK}, id);
-          // Immediately predict knockback on their local render position (smooth, no round-trip wait)
-          if(peers[id]){ peers[id].vkx=(peers[id].vkx||0)+dx*KNOCK*0.8; peers[id].vky=(peers[id].vky||0)+dy*KNOCK*0.8; }
+          net&&net.sendHit({dmg,byName:me.name,kx:dx*KNOCK,ky:dy*KNOCK},id);
+          if(peers[id]){peers[id].vkx=(peers[id].vkx||0)+dx*KNOCK*0.8;peers[id].vky=(peers[id].vky||0)+dy*KNOCK*0.8;}
+          if(me.vampiric) me.hp=Math.min(maxHpTotal,me.hp+dmg*me.vampiric);
         }
       }
       for(const id in bots){
@@ -415,57 +566,64 @@ function loop(t){
           me.hitSet.add(id);
           const dmg=(16+me.level*1.2)*me.lungeDmgMult;
           const dx=(b.x-me.x)/(bd||1), dy=(b.y-me.y)/(bd||1);
-          net&&net.sendHit({dmg,byName:me.name,kx:dx*KNOCK,ky:dy*KNOCK}, id);
-          // Predict knockback visually on the bot immediately
-          if(bots[id]){ bots[id].vkx=(bots[id].vkx||0)+dx*KNOCK*0.5; bots[id].vky=(bots[id].vky||0)+dy*KNOCK*0.5; }
+          net&&net.sendHit({dmg,byName:me.name,kx:dx*KNOCK,ky:dy*KNOCK},id);
+          if(bots[id]){bots[id].vkx=(bots[id].vkx||0)+dx*KNOCK*0.5;bots[id].vky=(bots[id].vky||0)+dy*KNOCK*0.5;}
+          if(me.vampiric) me.hp=Math.min(maxHpTotal,me.hp+dmg*me.vampiric);
         }
       }
     } else {
-      // --- Passive collision push (no lunge active) ---
+      // Passive collision push
       for(const id in peers){
         const p=peers[id]; if(!p)continue;
         const pr=radiusFromLevel(p.level||1,p.bulk||0);
         const dx=me.x-p.x, dy=me.y-p.y, d=Math.hypot(dx,dy)||0.001, minD=r+pr;
-        if(d<minD){ const push=(minD-d)*0.5; me.x+=(dx/d)*push; me.y+=(dy/d)*push; }
+        if(d<minD){const push=(minD-d)*0.5;me.x+=(dx/d)*push;me.y+=(dy/d)*push;}
       }
       for(const id in bots){
         const b=bots[id]; if(!b||b.down)continue;
         const br=radiusFromLevel(b.level||1,b.bulk||0);
         const dx=me.x-b.x, dy=me.y-b.y, d=Math.hypot(dx,dy)||0.001, minD=r+br;
-        if(d<minD){ const push=(minD-d)*0.5; me.x+=(dx/d)*push; me.y+=(dy/d)*push; }
+        if(d<minD){const push=(minD-d)*0.5;me.x+=(dx/d)*push;me.y+=(dy/d)*push;}
       }
       me.x=Math.min(WORLD,Math.max(0,me.x)); me.y=Math.min(WORLD,Math.max(0,me.y));
     }
 
-    // --- State broadcast ---
+    // State broadcast
     if(t-lastPresence>55){
       lastPresence=t;
       net&&net.sendState({x:me.x,y:me.y,level:me.level,name:me.name,color:me.color,bulk:me.bulk,hp:me.hp,maxHp:maxHpTotal});
     }
 
-    // --- HUD update ---
-    const inZone=distC<CENTER_RADIUS;
+    // ── HUD ──
+    const cdTotal=LUNGE_COOLDOWN*me.lungeCdMult;
+    const cdRemaining=Math.max(0,me.lungeCooldownUntil-now);
     document.getElementById('lvlText').textContent='Lv '+me.level;
     document.getElementById('xpText').textContent=me.xp+' xp';
     document.getElementById('xpfill').style.width=(xpProgress(me.xp)*100)+'%';
     document.getElementById('hpfill').style.width=(me.hp/maxHpTotal*100)+'%';
-    document.getElementById('lungeText').textContent=
-      inZone ? '☠️ DANGER ZONE — get out!' :
-      now<me.lungeCooldownUntil ? 'Lunge cooling down…' : 'Lunge ready — click to attack';
+    document.getElementById('hpText').textContent=Math.ceil(me.hp)+'/'+maxHpTotal;
+    document.getElementById('lungefill').style.width=(100-cdRemaining/cdTotal*100)+'%';
+    document.getElementById('lungeTimerText').textContent=cdRemaining>0?(cdRemaining/1000).toFixed(1)+'s':'READY';
+    // Zone warning
+    document.getElementById('zoneWarn').style.display=inZone?'block':'none';
+    // Shield indicator
+    const shRow=document.getElementById('shieldRow');
+    if(me.shieldMax){
+      shRow.style.display='block';
+      if(me.shieldActive){shRow.textContent='🛡️ Shield active';shRow.style.color='#5ee1c8';}
+      else{const rem=Math.max(0,me.shieldRechargeAt-now);shRow.textContent='🛡️ Recharging '+Math.ceil(rem/1000)+'s';shRow.style.color='#8b93b8';}
+    } else shRow.style.display='none';
   }
 
-  // --- Smooth interpolation for peers and bots ---
-  // Lower lerp factor (0.18 vs old 0.3) = smoother movement across update packets.
-  // vkx/vky carries locally-predicted knockback with the same ice friction.
+  // Smooth interpolation with ice knockback velocity
   for(const id in peers){
-    const p=peers[id]; if(!p) continue;
+    const p=peers[id]; if(!p)continue;
     p.vkx=(p.vkx||0)*VEL_FRICTION; p.vky=(p.vky||0)*VEL_FRICTION;
     p.rx+=(p.x-p.rx)*0.18+p.vkx; p.ry+=(p.y-p.ry)*0.18+p.vky;
   }
   for(const id in bots){
-    const b=bots[id]; if(!b) continue;
+    const b=bots[id]; if(!b)continue;
     b.vkx=(b.vkx||0)*VEL_FRICTION; b.vky=(b.vky||0)*VEL_FRICTION;
-    // Bots update at 8fps from server, slightly faster lerp keeps them on-target
     b.rx+=(b.x-b.rx)*0.22+b.vkx; b.ry+=(b.y-b.ry)*0.22+b.vky;
   }
 
@@ -473,6 +631,7 @@ function loop(t){
   updateBoard();
 }
 
+// ── Rendering ─────────────────────────────────────────────────────────────
 function draw(){
   ctx.fillStyle='#0b1020'; ctx.fillRect(0,0,canvas.width,canvas.height);
   const camX=(me?me.x:WORLD/2)-canvas.width/2, camY=(me?me.y:WORLD/2)-canvas.height/2;
@@ -480,26 +639,25 @@ function draw(){
 
   // Grid
   ctx.strokeStyle='#161d33'; ctx.lineWidth=1;
-  const step=80;
-  for(let x=0;x<=WORLD;x+=step){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,WORLD);ctx.stroke();}
-  for(let y=0;y<=WORLD;y+=step){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WORLD,y);ctx.stroke();}
+  for(let x=0;x<=WORLD;x+=80){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,WORLD);ctx.stroke();}
+  for(let y=0;y<=WORLD;y+=80){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WORLD,y);ctx.stroke();}
   ctx.strokeRect(0,0,WORLD,WORLD);
 
-  // Danger zone: pulsing red fill + animated border + label
+  // Danger zone — pulsing red fill + animated ring + label
   const pulse=Math.sin(Date.now()*0.003)*0.5+0.5;
   ctx.beginPath(); ctx.arc(FCX,FCY,CENTER_RADIUS,0,Math.PI*2);
   ctx.fillStyle=`rgba(220,40,40,${0.04+pulse*0.05})`; ctx.fill();
   ctx.strokeStyle=`rgba(255,70,70,${0.35+pulse*0.45})`; ctx.lineWidth=3+pulse*3; ctx.stroke();
   ctx.fillStyle=`rgba(255,110,90,${0.45+pulse*0.35})`;
   ctx.font='bold 13px sans-serif'; ctx.textAlign='center';
-  ctx.fillText('☠ DANGER ZONE', FCX, FCY-CENTER_RADIUS+22);
+  ctx.fillText('☠ DANGER ZONE',FCX,FCY-CENTER_RADIUS+22);
 
-  // Food pellets
+  // Food
   for(let i=0;i<food.length;i++){
     if(eaten.has(i))continue;
     const f=food[i];
     ctx.fillStyle=f.c; ctx.beginPath(); ctx.arc(f.x,f.y,f.big?7:4,0,Math.PI*2); ctx.fill();
-    if(f.big){ ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.lineWidth=1.5; ctx.stroke(); }
+    if(f.big){ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=1.5;ctx.stroke();}
   }
 
   // Peers
@@ -507,7 +665,7 @@ function draw(){
     const p=peers[id]; if(!p)continue;
     const skin=peerSkins[id]&&peerSkins[id].img;
     drawBlob(p.rx,p.ry,radiusFromLevel(p.level||1,p.bulk||0),p.color||'#888',p.name||'?',p.level||1,
-      (p.hp!=null&&p.maxHp)?p.hp/p.maxHp:null, skin&&skin.complete?skin:null);
+      (p.hp!=null&&p.maxHp)?p.hp/p.maxHp:null,skin&&skin.complete?skin:null);
   }
 
   // Bots
@@ -516,22 +674,39 @@ function draw(){
     drawBlob(b.rx,b.ry,radiusFromLevel(b.level||1,b.bulk||0),b.color,b.name,b.level,b.hp/b.maxHp,null);
   }
 
+  // Orbiting minions (drawn before player so they appear behind)
+  if(me&&alive&&me.orbiters){
+    const r=radiusFromLevel(me.level,me.bulk);
+    const orbR=r*0.42;
+    ctx.globalAlpha=0.72;
+    me.orbiters.forEach(orb=>{
+      if(orb.x===0&&orb.y===0)return;
+      drawBlob(orb.x,orb.y,orbR,me.color,'',0,null,ownSkin&&ownSkin.complete?ownSkin:null);
+    });
+    ctx.globalAlpha=1;
+  }
+
   // Local player
-  if(me && alive) drawBlob(me.x,me.y,radiusFromLevel(me.level,me.bulk),me.color,me.name+' (you)',me.level,
-      me.hp/(HP_BASE+me.maxHpBonus), ownSkin&&ownSkin.complete?ownSkin:null);
+  if(me&&alive){
+    const r=radiusFromLevel(me.level,me.bulk);
+    drawBlob(me.x,me.y,r,me.color,me.name+' (you)',me.level,me.hp/(HP_BASE+me.maxHpBonus),ownSkin&&ownSkin.complete?ownSkin:null);
+    // Shield ring
+    if(me.shieldActive){
+      ctx.beginPath(); ctx.arc(me.x,me.y,r+8,0,Math.PI*2);
+      ctx.strokeStyle='rgba(94,225,200,0.8)'; ctx.lineWidth=2.5;
+      ctx.setLineDash([7,5]); ctx.stroke(); ctx.setLineDash([]);
+    }
+  }
 
   ctx.restore();
 
   // Screen vignette when inside danger zone
-  if(me && alive){
+  if(me&&alive){
     const distC=Math.hypot(me.x-WORLD/2,me.y-WORLD/2);
     if(distC<CENTER_RADIUS){
-      const vPulse=0.35+0.35*Math.sin(Date.now()*0.005);
-      const grad=ctx.createRadialGradient(
-        canvas.width/2,canvas.height/2,canvas.width*0.2,
-        canvas.width/2,canvas.height/2,canvas.width*0.72);
-      grad.addColorStop(0,'rgba(200,0,0,0)');
-      grad.addColorStop(1,`rgba(200,0,0,${vPulse})`);
+      const vp=0.3+0.3*Math.sin(Date.now()*0.005);
+      const grad=ctx.createRadialGradient(canvas.width/2,canvas.height/2,canvas.width*0.2,canvas.width/2,canvas.height/2,canvas.width*0.72);
+      grad.addColorStop(0,'rgba(200,0,0,0)'); grad.addColorStop(1,`rgba(200,0,0,${vp})`);
       ctx.fillStyle=grad; ctx.fillRect(0,0,canvas.width,canvas.height);
     }
   }
@@ -539,12 +714,14 @@ function draw(){
 
 function drawBlob(x,y,r,color,name,level,hpFrac,skinImg){
   ctx.save(); ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.closePath(); ctx.clip();
-  if(skinImg){ ctx.imageSmoothingEnabled=false; ctx.drawImage(skinImg,x-r,y-r,r*2,r*2); }
-  else { ctx.fillStyle=color; ctx.fillRect(x-r,y-r,r*2,r*2); }
+  if(skinImg){ctx.imageSmoothingEnabled=false;ctx.drawImage(skinImg,x-r,y-r,r*2,r*2);}
+  else{ctx.fillStyle=color;ctx.fillRect(x-r,y-r,r*2,r*2);}
   ctx.restore();
   ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.lineWidth=2; ctx.strokeStyle='rgba(0,0,0,.3)'; ctx.stroke();
-  ctx.fillStyle='#0a0a12'; ctx.font='bold '+Math.max(10,r*0.4)+'px sans-serif'; ctx.textAlign='center';
-  ctx.fillText(name+' L'+level, x, y+4);
+  if(name){
+    ctx.fillStyle='#0a0a12'; ctx.font='bold '+Math.max(10,r*0.4)+'px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(name+(level?' L'+level:''),x,y+4);
+  }
   if(hpFrac!=null){
     ctx.fillStyle='rgba(0,0,0,.4)'; ctx.fillRect(x-r,y-r-10,r*2,5);
     ctx.fillStyle=hpFrac>0.3?'#5ee89a':'#ff6b6b'; ctx.fillRect(x-r,y-r-10,r*2*Math.max(0,hpFrac),5);
