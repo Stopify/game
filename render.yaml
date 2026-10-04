@@ -1,7 +1,7 @@
 services:
   - type: web
     name: blob-arena
-    runtime: node
+    env: node
     plan: free
     buildCommand: npm install --production
     startCommand: node server.js
