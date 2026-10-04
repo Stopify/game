@@ -203,7 +203,11 @@ io.on('connection',(socket)=>{
       // Velocity-based knockback — bot slides instead of teleporting
       bot.vkx=(bot.vkx||0)+(data.kx||0)*0.5;
       bot.vky=(bot.vky||0)+(data.ky||0)*0.5;
-      if(bot.hp<=0){ bot.respawnAt=Date.now()+8000; socket.emit('killed',{from:bot.id,bot:true}); }
+      if(bot.hp<=0){
+        bot.respawnAt=Date.now()+8000;
+        const bounty = Math.max(90, Math.floor(bot.level * 65 + bot.xp * 0.3));
+        socket.emit('killed',{from:bot.id, bot:true, xpBounty: bounty, victimName: bot.name, victimLevel: bot.level});
+      }
       return;
     }
     io.to(data.target).emit('hit',{...data,from:socket.id});
@@ -213,10 +217,19 @@ io.on('connection',(socket)=>{
     if(String(data.target).startsWith('bot-')){
       const room=rooms[socket.data.room]; if(!room) return;
       const bot=room.bots.find(b=>b.id===data.target);
-      if(bot){ bot.xp+=45; bot.level=levelFromXp(bot.xp); }
+      if(bot){
+        const gain = data.xpBounty || 60;
+        bot.xp+=gain;
+        bot.level=levelFromXp(bot.xp);
+      }
       return;
     }
-    io.to(data.target).emit('killed',{from:socket.id});
+    io.to(data.target).emit('killed',{
+      from: socket.id,
+      xpBounty: data.xpBounty,
+      victimName: data.victimName,
+      victimLevel: data.victimLevel
+    });
   });
 
   socket.on('disconnect',(reason)=>{

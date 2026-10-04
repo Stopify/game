@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Blob Arena</title>
 <style>
-:root{--bg:#0b1020;--grid:#161d33;--panel:#11162a;--panel-b:#232b4a;--text:#eef1ff;--sub:#8b93b8;--accent:#5ee1c8;--accent2:#ff6b9d;}
+:root{--bg:#0b1020;--grid:#161d33;--panel:#11162a;--panel-b:#232b4a;--text:#eef1ff;--sub:#8b93b8;--accent:#5ee1c8;--accent2:#ff6b9d;--gold:#ffd166;}
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Roboto,sans-serif;}
 canvas{display:block;width:100%;height:100%;touch-action:none;}
@@ -27,45 +27,57 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 #play{width:100%;padding:12px;border:none;border-radius:8px;background:var(--accent);color:#04231d;font-weight:700;font-size:15px;cursor:pointer;margin-top:14px;}
 #status{margin-top:10px;font-size:11px;color:var(--sub);}
 
-#hud{position:fixed;left:12px;bottom:12px;z-index:5;background:var(--panel);border:1px solid var(--panel-b);border-radius:10px;padding:8px 12px;font-size:13px;display:none;min-width:180px;}
+/* HUD & Stats */
+#hud{position:fixed;left:12px;bottom:12px;z-index:5;background:rgba(17,22,42,0.92);backdrop-filter:blur(6px);border:1px solid var(--panel-b);border-radius:12px;padding:10px 14px;font-size:13px;display:none;min-width:210px;max-width:260px;}
 #hud .lvl{font-weight:700;color:var(--accent);}
-.bar-wrap{margin-top:5px;}
-.bar-lbl{display:flex;justify-content:space-between;font-size:9px;color:var(--sub);margin-bottom:2px;}
+.bar-wrap{margin-top:6px;}
+.bar-lbl{display:flex;justify-content:space-between;font-size:9.5px;color:var(--sub);margin-bottom:2px;}
 .bar-track{height:6px;background:var(--panel-b);border-radius:4px;overflow:hidden;}
-.bar-fill{height:100%;border-radius:4px;width:0%;}
+.bar-fill{height:100%;border-radius:4px;width:0%;transition:width 0.1s linear;}
 #xpfill{background:var(--accent);}
 #hpfill{background:#ff6b6b;}
 #lungefill{background:var(--accent2);}
 #hpbar-track{height:8px;}
-#shieldRow{font-size:10px;margin-top:5px;display:none;}
-#zoneWarn{font-size:10px;color:#ff5555;margin-top:4px;display:none;font-weight:700;}
+
+/* Detailed stats panel */
+#statsGrid{margin-top:8px;padding-top:8px;border-top:1px solid var(--panel-b);display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;font-size:10px;}
+.stat-item{display:flex;align-items:center;justify-content:space-between;color:var(--sub);}
+.stat-val{font-weight:700;color:var(--text);margin-left:4px;}
+
+#shieldRow{font-size:10px;margin-top:5px;display:none;font-weight:700;}
+#zoneWarn{font-size:10px;color:#ff5555;margin-top:5px;display:none;font-weight:700;}
+
+/* Floating Kill announcement */
+#killBanner{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:rgba(20,28,55,0.95);border:1px solid var(--gold);color:var(--gold);padding:8px 18px;border-radius:20px;font-weight:800;font-size:14px;display:none;z-index:9;box-shadow:0 0 16px rgba(255,209,102,0.35);pointer-events:none;}
 
 #lobbyTag{position:fixed;left:12px;top:12px;z-index:5;background:var(--panel);border:1px solid var(--panel-b);border-radius:10px;padding:6px 10px;font-size:11px;color:var(--sub);display:none;}
 #pauseBtn{position:fixed;right:12px;bottom:12px;z-index:5;background:var(--panel);border:1px solid var(--panel-b);border-radius:50%;width:40px;height:40px;font-size:16px;cursor:pointer;display:none;color:var(--text);}
 #board{position:fixed;right:12px;top:12px;z-index:5;background:var(--panel);border:1px solid var(--panel-b);border-radius:10px;padding:10px 12px;font-size:12px;display:none;min-width:150px;}
 #board h3{font-size:11px;color:var(--sub);text-transform:uppercase;margin-bottom:6px;letter-spacing:.5px;}
 #board div.row{display:flex;justify-content:space-between;padding:2px 0;}
-#respawn,#pauseOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.66);z-index:9;}
+
+#respawn,#pauseOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);z-index:9;}
 #respawn .box,#pauseOverlay .box{background:var(--panel);border:1px solid var(--panel-b);border-radius:14px;padding:24px;text-align:center;max-width:420px;}
-#respawn button,#pauseOverlay button{margin-top:12px;padding:10px 18px;border:none;border-radius:8px;background:var(--accent2);color:#2a0716;font-weight:700;cursor:pointer;}
-#upgradeOverlay{position:fixed;left:12px;top:70px;z-index:9;display:none;max-width:240px;}
+#respawn button,#pauseOverlay button{margin-top:14px;padding:10px 20px;border:none;border-radius:8px;background:var(--accent2);color:#2a0716;font-weight:700;cursor:pointer;font-size:14px;}
+#upgradeOverlay{position:fixed;left:12px;top:70px;z-index:9;display:none;max-width:250px;}
 #upgradeOverlay .box{background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:12px;text-align:left;box-shadow:0 4px 18px rgba(0,0,0,.35);}
 #upgradeOverlay .hdr{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px;}
 #upgradeCards{display:flex;flex-direction:column;gap:6px;}
-.upcard{width:100%;padding:7px 9px;border:1px solid var(--panel-b);border-radius:8px;cursor:pointer;background:rgba(127,127,127,.08);color:var(--text);display:flex;align-items:center;gap:8px;text-align:left;}
-.upcard:hover{background:rgba(127,127,127,.18);}
+.upcard{width:100%;padding:8px 10px;border:1px solid var(--panel-b);border-radius:8px;cursor:pointer;background:rgba(127,127,127,.08);color:var(--text);display:flex;align-items:center;gap:8px;text-align:left;transition:all .15s ease;}
+.upcard:hover{background:rgba(127,127,127,.18);transform:translateX(2px);}
 .upcard.t2{border-color:#5ee1c880;}
 .upcard.t2:hover{border-color:var(--accent);}
 .upcard.t3{border-color:#ffd16680;}
 .upcard.t3:hover{border-color:#ffd166;}
-.upcard .ic{font-size:17px;flex-shrink:0;}
-.upcard .txt{display:flex;flex-direction:column;min-width:0;}
-.upcard .nm{font-weight:700;font-size:11px;display:flex;align-items:center;gap:4px;}
-.upcard .ds{font-size:9.5px;color:var(--sub);line-height:1.25;}
+.upcard .ic{font-size:18px;flex-shrink:0;}
+.upcard .txt{display:flex;flex-direction:column;min-width:0;flex:1;}
+.upcard .nm{font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:space-between;}
+.upcard .ds{font-size:9.5px;color:var(--sub);line-height:1.25;margin-top:2px;}
 .tier-badge{font-size:8px;padding:1px 4px;border-radius:3px;font-weight:700;}
-.t1 .tier-badge{background:#333;color:#888;}
+.t1 .tier-badge{background:#333;color:#aaa;}
 .t2 .tier-badge{background:#1a3a3a;color:var(--accent);}
-.t3 .tier-badge{background:#3a3000;color:#ffd166;}
+.t3 .tier-badge{background:#3a3000;color:var(--gold);}
+.stack-badge{font-size:8.5px;background:rgba(255,255,255,0.12);padding:1px 4px;border-radius:4px;color:var(--text);}
 </style>
 </head>
 <body>
@@ -88,16 +100,19 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
     <div id="status">Share your lobby code with friends before you hit Play.</div>
   </div>
 </div>
+
 <canvas id="c"></canvas>
 <div id="lobbyTag">Lobby: <b id="lobbyTagText"></b></div>
+
+<!-- HUD -->
 <div id="hud">
   <div><span class="lvl" id="lvlText">Lv 1</span> · <span id="xpText">0 xp</span></div>
   <div class="bar-wrap">
-    <div class="bar-lbl"><span>XP</span></div>
+    <div class="bar-lbl"><span>XP</span><span id="xpPctText">0%</span></div>
     <div class="bar-track"><div class="bar-fill" id="xpfill"></div></div>
   </div>
   <div class="bar-wrap">
-    <div class="bar-lbl"><span>❤️ HP</span><span id="hpText"></span></div>
+    <div class="bar-lbl"><span>❤️ HP</span><span id="hpText">100/100</span></div>
     <div class="bar-track" id="hpbar-track"><div class="bar-fill" id="hpfill" style="width:100%"></div></div>
   </div>
   <div class="bar-wrap">
@@ -106,21 +121,39 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
   </div>
   <div id="shieldRow"></div>
   <div id="zoneWarn">☠️ DANGER ZONE — get out!</div>
+
+  <!-- Detailed Stats Display -->
+  <div id="statsGrid">
+    <div class="stat-item"><span>🏃 Speed:</span><span class="stat-val" id="statSpeed">1.0x</span></div>
+    <div class="stat-item"><span>⚔️ Damage:</span><span class="stat-val" id="statDmg">17</span></div>
+    <div class="stat-item"><span>⏱️ Lunge CD:</span><span class="stat-val" id="statCd">1.4s</span></div>
+    <div class="stat-item"><span>🩸 Lifesteal:</span><span class="stat-val" id="statVamp">0%</span></div>
+    <div class="stat-item"><span>🧲 Pull:</span><span class="stat-val" id="statMag">0</span></div>
+    <div class="stat-item"><span>🍒 XP Bonus:</span><span class="stat-val" id="statXp">1.0x</span></div>
+    <div class="stat-item"><span>🫧 Minions:</span><span class="stat-val" id="statMinions">0</span></div>
+    <div class="stat-item"><span>💫 Shockwave:</span><span class="stat-val" id="statWave">-</span></div>
+  </div>
 </div>
+
+<div id="killBanner"></div>
 <button id="pauseBtn">⏸</button>
 <div id="board"><h3>Leaderboard</h3><div id="rows"></div></div>
+
 <div id="respawn"><div class="box">
-  <div id="deathMsg" style="font-size:16px;margin-bottom:4px;">You were eaten!</div>
-  <div style="color:var(--sub);font-size:12px;">Final level: <span id="finalLvl"></span></div>
-  <button id="respawnBtn">Respawn</button>
+  <div id="deathMsg" style="font-size:17px;font-weight:700;margin-bottom:6px;">You were eaten!</div>
+  <div style="color:var(--sub);font-size:13px;margin-bottom:4px;">Final level: <b id="finalLvl" style="color:var(--text)"></b></div>
+  <div style="color:var(--accent);font-size:12px;margin-bottom:6px;">🌟 Kept XP: <b id="retainedXpText">0</b> (Respawn at Lv <span id="retainedLvlText">1</span>)</div>
+  <button id="respawnBtn">Respawn with Kept XP</button>
 </div></div>
+
 <div id="upgradeOverlay"><div class="box">
   <div class="hdr">🎉 Level up! Pick one:</div>
   <div id="upgradeCards"></div>
 </div></div>
+
 <div id="pauseOverlay"><div class="box">
   <div style="font-size:18px;margin-bottom:6px;">⏸ Paused</div>
-  <div style="color:var(--sub);font-size:12px;">Your blob is frozen. Others keep playing.</div>
+  <div style="color:var(--sub);font-size:12px;line-height:1.4;">Your controls are frozen.<br><b style="color:#ff6b6b">⚠️ Warning:</b> You can still be hit and take danger zone damage while paused!</div>
   <button id="resumeBtn">Resume</button>
 </div></div>
 
@@ -162,9 +195,9 @@ document.getElementById('randomLobby').onclick=()=>{lobbyInput.value=randCode();
 // ── Constants ──────────────────────────────────────────────────────────────
 const WORLD=3600, OUTER_FOOD=300, CENTER_FOOD=70, CENTER_RADIUS=520;
 const BASE_SPEED=2.3, LUNGE_SPEED=10.5, LUNGE_DURATION=220, LUNGE_ENDLAG=280, LUNGE_COOLDOWN=1400, KNOCK=44;
-const HP_BASE=100, REGEN_DELAY=5500, REGEN_RATE=3; // regen nerfed: 3 hp/sec, 5.5s delay
+const HP_BASE=100, REGEN_DELAY=5500, REGEN_RATE=3; // 3 hp/sec after 5.5s out of combat
 const VEL_FRICTION=0.91;   // ice-slide friction per frame
-const CENTER_DOT=7;         // hp/sec damage inside danger zone
+const CENTER_DOT=7;         // hp/sec inside danger zone
 
 // ── RNG & Food ────────────────────────────────────────────────────────────
 function mulberry32(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
@@ -177,6 +210,9 @@ for(let i=0;i<CENTER_FOOD;i++){
   food.push({x:FCX+Math.cos(ang)*rad, y:FCY+Math.sin(ang)*rad, big:true, c:'#ffd166'});
 }
 const eaten=new Set();
+
+// Visual effects array for ripples, shockwaves, particles
+let visualFx=[];
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function levelFromXp(xp){
@@ -196,39 +232,48 @@ function freshStats(){
     speedMult:1, magnet:0, xpMult:1, bulk:0,
     lungeDmgMult:1, lungeCdMult:1, lungeDurMult:1,
     regenMult:1, maxHpBonus:0,
-    vampiric:0,          // % of lunge damage returned as HP
-    berserk:false,       // +35% speed below 35% HP
-    shockwave:false,     // lunge blasts nearby enemies on activation
-    shieldMax:false,     // has the shield upgrade
-    shieldActive:false,  // shield is currently up
-    shieldRechargeAt:0,  // timestamp when shield comes back
-    orbiterCount:0,      // number of orbiting minions
-    orbiters:null,       // live orbiter state array
+    vampiric:0,          // % lifesteal
+    berserkStacks:0,     // stackable: +30% speed & +15% dmg per stack below 40% HP
+    shockwaveLevel:0,    // stackable: level 1, 2, 3...
+    shieldMaxCharges:0,  // stackable: 1, 2, 3 hits absorbed
+    shieldCharges:0,     // current charges available
+    shieldCooldownMs:22000, // decreases with stacks
+    shieldRechargeAt:0,
+    orbiterCount:0,      // stackable up to 5
+    orbiters:null,
+    upgradeCounts:{},    // map tracking stack count for each upgrade id
   };
 }
 
-// ── Upgrade pool (tiered) ─────────────────────────────────────────────────
-// tier 1 = always available | tier 2 = unlocks at lv 3 | tier 3 = unlocks at lv 6
+// ── Upgrade pool (Tiered & Fully Stackable) ─────────────────────────────────
 const UPGRADE_POOL=[
-  // ── Tier 1 ──
-  {tier:1,id:'swift',     name:'Swift',        desc:'+12% move speed',               icon:'⚡', apply:m=>m.speedMult*=1.12},
-  {tier:1,id:'magnet',    name:'Magnetism',    desc:'+50 pellet pull range',          icon:'🧲', apply:m=>m.magnet+=50},
-  {tier:1,id:'feast',     name:'Feast',        desc:'+25% XP from pellets',           icon:'🍒', apply:m=>m.xpMult*=1.25},
-  {tier:1,id:'regen',     name:'Regeneration', desc:'+60% HP regen rate',             icon:'🌿', apply:m=>m.regenMult*=1.6},
-  {tier:1,id:'bulk',      name:'Bulk Up',      desc:'+8% size',                       icon:'💪', apply:m=>m.bulk+=0.08},
-  // ── Tier 2 ──
-  {tier:2,id:'fury',      name:'Fury',         desc:'-15% lunge cooldown',            icon:'🔥', apply:m=>m.lungeCdMult*=0.85},
-  {tier:2,id:'power',     name:'Power Strike', desc:'+25% lunge damage',              icon:'💥', apply:m=>m.lungeDmgMult*=1.25},
-  {tier:2,id:'vitality',  name:'Vitality',     desc:'+25 max HP, heals now',          icon:'❤️', apply:m=>{m.maxHpBonus+=25;m.hp=Math.min(m.hp+25,HP_BASE+m.maxHpBonus);}},
-  {tier:2,id:'vampire',   name:'Vampiric',     desc:'Lunge heals 15% of dmg dealt',  icon:'🧛', apply:m=>m.vampiric+=0.15},
-  {tier:2,id:'afterburn', name:'Afterburner',  desc:'+40% lunge distance & speed',   icon:'🚀', apply:m=>m.lungeDurMult*=1.4},
-  {tier:2,id:'berserk',   name:'Berserk',      desc:'Below 35% HP: +35% speed',      icon:'😡', apply:m=>m.berserk=true},
-  // ── Tier 3 ──
-  {tier:3,id:'minions',   name:'Minions',      desc:'Summon orbiting mini-blob (3x)',  icon:'🫧',
-    maxStack:3, apply:m=>{ m.orbiterCount=(m.orbiterCount||0)+1; m.orbiters=null; }},
-  {tier:3,id:'shield',    name:'Shield',       desc:'Absorbs 1 hit, recharges 25s',   icon:'🛡️',
-    apply:m=>{ m.shieldMax=true; m.shieldActive=true; m.shieldRechargeAt=0; }},
-  {tier:3,id:'shockwave', name:'Shockwave',    desc:'Lunge blasts nearby enemies',    icon:'💫', apply:m=>m.shockwave=true},
+  // ── Tier 1 (Common) ──
+  {tier:1,id:'swift',     name:'Swift',        desc:'+15% movement speed',              icon:'⚡', apply:m=>m.speedMult*=1.15},
+  {tier:1,id:'magnet',    name:'Magnetism',    desc:'+60 pellet pull range',             icon:'🧲', apply:m=>m.magnet+=60},
+  {tier:1,id:'feast',     name:'Feast',        desc:'+30% XP from pellets & kills',      icon:'🍒', apply:m=>m.xpMult+=0.30},
+  {tier:1,id:'regen',     name:'Regeneration', desc:'+80% HP regeneration rate',         icon:'🌿', apply:m=>m.regenMult+=0.8},
+  {tier:1,id:'bulk',      name:'Bulk Up',      desc:'+10% size and mass',                icon:'💪', apply:m=>m.bulk+=0.10},
+
+  // ── Tier 2 (Unlocks Lv 3) ──
+  {tier:2,id:'fury',      name:'Fury',         desc:'-22% lunge cooldown',               icon:'🔥', apply:m=>m.lungeCdMult=Math.max(0.25,m.lungeCdMult*0.78)},
+  {tier:2,id:'power',     name:'Power Strike', desc:'+35% lunge strike damage',          icon:'💥', apply:m=>m.lungeDmgMult+=0.35},
+  {tier:2,id:'vitality',  name:'Vitality',     desc:'+40 max HP and instant heal',       icon:'❤️', apply:m=>{m.maxHpBonus+=40;m.hp=Math.min(m.hp+40,HP_BASE+m.maxHpBonus);}},
+  {tier:2,id:'vampire',   name:'Vampiric',     desc:'+20% lifesteal on lunge hits',      icon:'🧛', apply:m=>m.vampiric+=0.20},
+  {tier:2,id:'afterburn', name:'Afterburner',  desc:'+35% lunge distance and launch',    icon:'🚀', apply:m=>m.lungeDurMult+=0.35},
+  {tier:2,id:'berserk',   name:'Berserk',      desc:'Below 40% HP: +30% speed & dmg',    icon:'😡', apply:m=>m.berserkStacks=(m.berserkStacks||0)+1},
+
+  // ── Tier 3 (Unlocks Lv 6 - Powerful!) ──
+  {tier:3,id:'minions',   name:'Minions',      desc:'Add +1 orbiting defender (up to 5)',icon:'🫧',
+    maxStack:5, apply:m=>{ m.orbiterCount=Math.min(5,(m.orbiterCount||0)+1); m.orbiters=null; }},
+  {tier:3,id:'shield',    name:'Energy Shield',desc:'+1 shield charge & faster recharge',icon:'🛡️',
+    maxStack:3, apply:m=>{
+      m.shieldMaxCharges=(m.shieldMaxCharges||0)+1;
+      m.shieldCharges=m.shieldMaxCharges;
+      m.shieldCooldownMs=Math.max(8000, (m.shieldCooldownMs||22000)-4000);
+      m.shieldRechargeAt=0;
+    }},
+  {tier:3,id:'shockwave', name:'Shockwave',    desc:'Lunge triggers large knockback blast',icon:'💫',
+    maxStack:4, apply:m=>m.shockwaveLevel=(m.shockwaveLevel||0)+1},
 ];
 
 let pendingUpgrades=0, upgradeOpen=false;
@@ -238,11 +283,10 @@ function pickUpgrades(count=3){
   const pool=UPGRADE_POOL.filter(u=>{
     if(u.tier===2 && lv<3) return false;
     if(u.tier===3 && lv<6) return false;
-    if(u.id==='minions' && (me.orbiterCount||0)>=(u.maxStack||1)) return false;
+    if(u.maxStack && (me.upgradeCounts[u.id]||0)>=u.maxStack) return false;
     return true;
   });
-  // Weighted: at high level, tier 2/3 become much more likely
-  function w(u){ return u.tier===1 ? Math.max(0.4, 3.5-lv*0.22) : u.tier===2 ? 1+lv*0.09 : Math.max(0.5, lv*0.16); }
+  function w(u){ return u.tier===1 ? Math.max(0.4, 3.5-lv*0.2) : u.tier===2 ? 1+lv*0.1 : Math.max(0.6, lv*0.18); }
   const weighted=pool.map(u=>({u,w:w(u)}));
   const picks=[];
   while(picks.length<count && weighted.length>0){
@@ -262,11 +306,15 @@ function showUpgradePicker(){
   const TIER_LABEL=['','I','II','III'];
   picks.forEach(u=>{
     const d=document.createElement('div'); d.className='upcard t'+u.tier;
+    const curRank=(me.upgradeCounts&&me.upgradeCounts[u.id])||0;
+    const rankBadge=curRank>0?`<span class="stack-badge">Rank ${curRank+1}</span>`:'';
     d.innerHTML=`<div class="ic">${u.icon}</div><div class="txt">
-      <div class="nm">${u.name}<span class="tier-badge">T${TIER_LABEL[u.tier]}</span></div>
+      <div class="nm"><span>${u.name} ${rankBadge}</span><span class="tier-badge">T${TIER_LABEL[u.tier]}</span></div>
       <div class="ds">${u.desc}</div></div>`;
     d.onclick=()=>{
-      u.apply(me); pendingUpgrades--;
+      u.apply(me);
+      me.upgradeCounts[u.id]=(curRank+1);
+      pendingUpgrades--;
       document.getElementById('upgradeOverlay').style.display='none'; upgradeOpen=false;
       if(pendingUpgrades>0) showUpgradePicker();
     };
@@ -279,13 +327,23 @@ function checkUpgradeSteps(){
   while(me.level-me.lastUpgradeLevel>=me.upgradeStep){
     pendingUpgrades++;
     me.lastUpgradeLevel+=me.upgradeStep;
-    // Frequent early (step stays 1 until lv 5), then grows
+    // Step grows smoothly after Lv 5
     if(me.lastUpgradeLevel>=5) me.upgradeStep+=1;
   }
   if(pendingUpgrades>0 && !upgradeOpen) showUpgradePicker();
 }
 
-// ── Canvas & state ────────────────────────────────────────────────────────
+// ── Kill Announcements ────────────────────────────────────────────────────
+let killTimer=null;
+function showKillBanner(victimName, xpAwarded){
+  const el=document.getElementById('killBanner');
+  el.textContent=`☠️ KILLED ${victimName.toUpperCase()}! +${xpAwarded} XP`;
+  el.style.display='block';
+  if(killTimer) clearTimeout(killTimer);
+  killTimer=setTimeout(()=>{ el.style.display='none'; }, 2800);
+}
+
+// ── Canvas & State ────────────────────────────────────────────────────────
 const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
 function resize(){canvas.width=innerWidth;canvas.height=innerHeight;}
 addEventListener('resize',resize);resize();
@@ -331,7 +389,7 @@ function setupNet(code){
     sendFood:d=>socket.emit('food',d),
     sendSkin:d=>socket.emit('skin',d),
     sendHit:(d,target)=>socket.emit('hit',{...d,target}),
-    sendKilled:(d,target)=>socket.emit('killed',{target}),
+    sendKilled:(d,target)=>socket.emit('killed',{...d,target}),
   };
   socket.on('connect',()=>{ socket.emit('join',code); updateLobbyTag(code); });
   socket.on('connect_error',()=>{ document.getElementById('lobbyTagText').textContent=code+' (server waking up… retrying)'; });
@@ -356,28 +414,45 @@ function setupNet(code){
     });
     bots=nb;
   });
+
   socket.on('hit',data=>{
     if(!alive)return;
-    // Shield absorbs the hit entirely
-    if(me.shieldActive){
-      me.shieldActive=false;
-      me.shieldRechargeAt=performance.now()+25000;
+    // Shield absorbs hit
+    if(me.shieldCharges>0){
+      me.shieldCharges--;
+      if(me.shieldRechargeAt<=performance.now()) me.shieldRechargeAt=performance.now()+me.shieldCooldownMs;
+      visualFx.push({type:'shieldBreak',x:me.x,y:me.y,r:radiusFromLevel(me.level,me.bulk)+10,alpha:1});
       return;
     }
     me.hp=Math.max(0,me.hp-data.dmg);
     me.lastDamage=performance.now();
-    // Velocity-based knockback (ice physics)
+    // Ice knockback velocity
     me.kx+=(data.kx||0)*0.8;
     me.ky+=(data.ky||0)*0.8;
     if(me.hp<=0){
       alive=false;
+      const retainedXp=Math.floor(me.xp*0.40); // Keep 40% of XP!
+      const retainedLvl=levelFromXp(retainedXp);
       document.getElementById('finalLvl').textContent=me.level;
+      document.getElementById('retainedXpText').textContent=retainedXp;
+      document.getElementById('retainedLvlText').textContent=retainedLvl;
       document.getElementById('deathMsg').textContent=(data.byName||'Someone')+' finished you off!';
       document.getElementById('respawn').style.display='flex';
-      net.sendKilled({},data.from);
+      // Calculate and award XP bounty to killer
+      const xpBounty=Math.max(120,Math.floor(me.level*90+me.xp*0.35));
+      net.sendKilled({xpBounty,victimName:me.name,victimLevel:me.level},data.from);
     }
   });
-  socket.on('killed',()=>{ me.xp+=45; me.level=levelFromXp(me.xp); checkUpgradeSteps(); });
+
+  // Reward killer with rich XP bounty
+  socket.on('killed',data=>{
+    const gain=Math.round((data.xpBounty||110)*(me.xpMult||1));
+    me.xp+=gain;
+    me.level=levelFromXp(me.xp);
+    showKillBanner(data.victimName||'an enemy',gain);
+    checkUpgradeSteps();
+  });
+
   setInterval(()=>{ if(alive&&skinDataURL) net.sendSkin({img:skinDataURL}); },4000);
 }
 
@@ -396,41 +471,63 @@ function tryLunge(){
   me.lungeUntil=now+dur;
   me.lungeEndlagUntil=now+dur+LUNGE_ENDLAG;
   me.lungeCooldownUntil=now+LUNGE_COOLDOWN*me.lungeCdMult;
-  me.kx=me.lungeDX*14; me.ky=me.lungeDY*14; // momentum burst
+  // Launch momentum burst
+  const launchSpeed=14*(1+(me.lungeDurMult-1)*0.4);
+  me.kx=me.lungeDX*launchSpeed; me.ky=me.lungeDY*launchSpeed;
   me.hitSet=new Set();
-  // Shockwave: blast nearby enemies on lunge activation
-  if(me.shockwave){
+
+  // Shockwave implementation & visual ripple
+  if(me.shockwaveLevel>0){
     const r=radiusFromLevel(me.level,me.bulk);
+    const blastRadius=r+180+me.shockwaveLevel*65;
+    const waveDmg=(14+me.level*1.5)*me.shockwaveLevel*me.lungeDmgMult;
+    const waveKnock=100+me.shockwaveLevel*40;
+
+    visualFx.push({type:'shockwave',x:me.x,y:me.y,r:r,maxR:blastRadius,alpha:1,color:'#5ee1c8'});
+
     for(const id in peers){
       const p=peers[id]; if(!p)continue;
-      const pd=Math.hypot(p.x-me.x,p.y-me.y);
-      if(pd<r+130){ const ex=(p.x-me.x)/(pd||1), ey=(p.y-me.y)/(pd||1);
-        net&&net.sendHit({dmg:6,byName:me.name,kx:ex*70,ky:ey*70},id);
-        if(peers[id]){peers[id].vkx=(peers[id].vkx||0)+ex*70*0.8;peers[id].vky=(peers[id].vky||0)+ey*70*0.8;}
+      const pd=Math.hypot(p.rx-me.x,p.ry-me.y);
+      if(pd<blastRadius){
+        const ex=(p.rx-me.x)/(pd||1), ey=(p.ry-me.y)/(pd||1);
+        net&&net.sendHit({dmg:waveDmg,byName:me.name+' (shockwave)',kx:ex*waveKnock,ky:ey*waveKnock},id);
+        if(peers[id]){peers[id].vkx=(peers[id].vkx||0)+ex*waveKnock*0.8;peers[id].vky=(peers[id].vky||0)+ey*waveKnock*0.8;}
       }
     }
     for(const id in bots){
       const b=bots[id]; if(!b||b.down)continue;
-      const bd=Math.hypot(b.x-me.x,b.y-me.y);
-      if(bd<r+130){ const ex=(b.x-me.x)/(bd||1), ey=(b.y-me.y)/(bd||1);
-        net&&net.sendHit({dmg:6,byName:me.name,kx:ex*70,ky:ey*70},id);
-        if(bots[id]){bots[id].vkx=(bots[id].vkx||0)+ex*70*0.5;bots[id].vky=(bots[id].vky||0)+ey*70*0.5;}
+      const bd=Math.hypot(b.rx-me.x,b.ry-me.y);
+      if(bd<blastRadius){
+        const ex=(b.rx-me.x)/(bd||1), ey=(b.ry-me.y)/(bd||1);
+        net&&net.sendHit({dmg:waveDmg,byName:me.name+' (shockwave)',kx:ex*waveKnock,ky:ey*waveKnock},id);
+        if(bots[id]){bots[id].vkx=(bots[id].vkx||0)+ex*waveKnock*0.5;bots[id].vky=(bots[id].vky||0)+ey*waveKnock*0.5;}
       }
     }
   }
 }
 
-// ── Respawn ───────────────────────────────────────────────────────────────
+// ── Respawn (Retaining % XP) ──────────────────────────────────────────────
 document.getElementById('respawnBtn').onclick=()=>{
   const sp=randSpawn();
-  me.x=sp.x;me.y=sp.y;me.xp=0;me.level=1;me.lastUpgradeLevel=0;me.upgradeStep=1;
-  me.lungeCooldownUntil=0;me.lungeUntil=0;me.lungeEndlagUntil=0;me.lastDamage=0;
-  me.kx=0;me.ky=0;
-  Object.assign(me,freshStats()); me.hp=HP_BASE;
+  const retainedXp=Math.floor(me.xp*0.40);
+  const retainedLvl=levelFromXp(retainedXp);
+
+  me.x=sp.x; me.y=sp.y;
+  me.xp=retainedXp;
+  me.level=retainedLvl;
+  me.lastUpgradeLevel=0;
+  me.upgradeStep=1;
+  me.lungeCooldownUntil=0; me.lungeUntil=0; me.lungeEndlagUntil=0; me.lastDamage=0;
+  me.kx=0; me.ky=0;
+  Object.assign(me,freshStats());
+  me.hp=HP_BASE;
   pendingUpgrades=0; upgradeOpen=false;
   document.getElementById('respawn').style.display='none';
   document.getElementById('upgradeOverlay').style.display='none';
   alive=true;
+
+  // Immediately award upgrade points for retained levels!
+  checkUpgradeSteps();
 };
 
 // ── Pause ─────────────────────────────────────────────────────────────────
@@ -444,67 +541,85 @@ document.getElementById('resumeBtn').onclick=()=>setManualPaused(false);
 addEventListener('keydown',e=>{ if(e.key==='Escape'&&alive) setManualPaused(!manualPaused); });
 document.addEventListener('visibilitychange',()=>{ if(document.hidden&&alive) setManualPaused(true); });
 
-// ── Main loop ─────────────────────────────────────────────────────────────
+// ── Main Loop ─────────────────────────────────────────────────────────────
 let lastPresence=0;
 function loop(t){
   requestAnimationFrame(loop);
-  if(alive&&me&&!manualPaused){
+  if(alive&&me){
     const now=performance.now();
     const maxHpTotal=HP_BASE+me.maxHpBonus;
 
-    // Shield recharge
-    if(me.shieldMax&&!me.shieldActive&&now>=me.shieldRechargeAt) me.shieldActive=true;
-
-    // HP regen (slow — 3 hp/sec after 5.5s out of danger)
-    if(now-me.lastDamage>REGEN_DELAY&&me.hp<maxHpTotal)
-      me.hp=Math.min(maxHpTotal,me.hp+REGEN_RATE*me.regenMult/60);
-
-    // Ice physics: decay knockback velocity
-    me.kx*=VEL_FRICTION; me.ky*=VEL_FRICTION;
-
-    // Movement
-    let mvx,mvy;
-    if(now<me.lungeUntil){ mvx=me.lungeDX*LUNGE_SPEED; mvy=me.lungeDY*LUNGE_SPEED; }
-    else{
-      const {dx,dy}=ptrToWorld(); const dist=Math.hypot(dx,dy)||1;
-      let speed=BASE_SPEED/(1+me.level*0.05)*me.speedMult;
-      if(me.berserk&&me.hp/maxHpTotal<0.35) speed*=1.35;
-      if(now<me.lungeEndlagUntil) speed*=0.42;
-      mvx=dist>6?dx/dist*speed:0; mvy=dist>6?dy/dist*speed:0;
+    // Shield recharge timer (runs whether paused or not)
+    if(me.shieldMaxCharges>0 && me.shieldCharges<me.shieldMaxCharges && now>=me.shieldRechargeAt){
+      me.shieldCharges++;
+      if(me.shieldCharges<me.shieldMaxCharges) me.shieldRechargeAt=now+me.shieldCooldownMs;
     }
-    me.x=Math.min(WORLD,Math.max(0,me.x+mvx+me.kx));
-    me.y=Math.min(WORLD,Math.max(0,me.y+mvy+me.ky));
 
-    // Danger zone DoT
+    // Danger zone DoT (APPLIES EVEN IF PAUSED!)
     const distC=Math.hypot(me.x-WORLD/2,me.y-WORLD/2);
     const inZone=distC<CENTER_RADIUS;
     if(inZone){
       me.hp=Math.max(0,me.hp-CENTER_DOT/60);
-      me.lastDamage=now;
+      me.lastDamage=now; // prevents regen
       if(me.hp<=0){
         alive=false;
+        const retainedXp=Math.floor(me.xp*0.40);
+        const retainedLvl=levelFromXp(retainedXp);
         document.getElementById('finalLvl').textContent=me.level;
+        document.getElementById('retainedXpText').textContent=retainedXp;
+        document.getElementById('retainedLvlText').textContent=retainedLvl;
         document.getElementById('deathMsg').textContent='The danger zone consumed you!';
         document.getElementById('respawn').style.display='flex';
       }
     }
 
+    // HP regeneration (only when out of combat & outside danger zone)
+    if(!inZone && now-me.lastDamage>REGEN_DELAY && me.hp<maxHpTotal){
+      me.hp=Math.min(maxHpTotal,me.hp+REGEN_RATE*me.regenMult/60);
+    }
+
+    // Ice physics: decay knockback velocity
+    me.kx*=VEL_FRICTION; me.ky*=VEL_FRICTION;
+
+    // Active movement only if NOT paused
+    if(!manualPaused){
+      let mvx,mvy;
+      if(now<me.lungeUntil){
+        mvx=me.lungeDX*LUNGE_SPEED; mvy=me.lungeDY*LUNGE_SPEED;
+      } else {
+        const {dx,dy}=ptrToWorld(); const dist=Math.hypot(dx,dy)||1;
+        let speed=BASE_SPEED/(1+me.level*0.05)*me.speedMult;
+        // Berserk speed bonus
+        if(me.berserkStacks>0 && me.hp/maxHpTotal<0.40) speed*=(1+0.30*me.berserkStacks);
+        if(now<me.lungeEndlagUntil) speed*=0.42;
+        mvx=dist>6?dx/dist*speed:0; mvy=dist>6?dy/dist*speed:0;
+      }
+      me.x=Math.min(WORLD,Math.max(0,me.x+mvx+me.kx));
+      me.y=Math.min(WORLD,Math.max(0,me.y+mvy+me.ky));
+    } else {
+      // While paused, only drift with lingering knockback
+      me.x=Math.min(WORLD,Math.max(0,me.x+me.kx));
+      me.y=Math.min(WORLD,Math.max(0,me.y+me.ky));
+    }
+
     const r=radiusFromLevel(me.level,me.bulk);
 
-    // Food collection
-    for(let i=0;i<food.length;i++){
-      if(eaten.has(i))continue;
-      const f=food[i];
-      const fd=Math.hypot(f.x-me.x,f.y-me.y);
-      if(me.magnet>0&&fd<r+me.magnet){f.x+=(me.x-f.x)*0.12;f.y+=(me.y-f.y)*0.12;}
-      if(fd<r){
-        eaten.add(i); me.xp+=(f.big?16:6)*me.xpMult; me.level=levelFromXp(me.xp);
-        net&&net.sendFood({i}); checkUpgradeSteps();
-        setTimeout(()=>{
-          if(f.big){const ang=Math.random()*Math.PI*2,rad=Math.sqrt(Math.random())*CENTER_RADIUS;food[i].x=FCX+Math.cos(ang)*rad;food[i].y=FCY+Math.sin(ang)*rad;}
-          else{food[i].x=60+Math.random()*(WORLD-120);food[i].y=60+Math.random()*(WORLD-120);}
-          eaten.delete(i); net&&net.sendFood({i,respawn:true,x:food[i].x,y:food[i].y});
-        },9000+Math.random()*6000);
+    // Food collection (only when unpaused)
+    if(!manualPaused){
+      for(let i=0;i<food.length;i++){
+        if(eaten.has(i))continue;
+        const f=food[i];
+        const fd=Math.hypot(f.x-me.x,f.y-me.y);
+        if(me.magnet>0&&fd<r+me.magnet){f.x+=(me.x-f.x)*0.12;f.y+=(me.y-f.y)*0.12;}
+        if(fd<r){
+          eaten.add(i); me.xp+=Math.round((f.big?18:7)*me.xpMult); me.level=levelFromXp(me.xp);
+          net&&net.sendFood({i}); checkUpgradeSteps();
+          setTimeout(()=>{
+            if(f.big){const ang=Math.random()*Math.PI*2,rad=Math.sqrt(Math.random())*CENTER_RADIUS;food[i].x=FCX+Math.cos(ang)*rad;food[i].y=FCY+Math.sin(ang)*rad;}
+            else{food[i].x=60+Math.random()*(WORLD-120);food[i].y=60+Math.random()*(WORLD-120);}
+            eaten.delete(i); net&&net.sendFood({i,respawn:true,x:food[i].x,y:food[i].y});
+          },9000+Math.random()*6000);
+        }
       }
     }
 
@@ -512,7 +627,7 @@ function loop(t){
     if(me.orbiterCount>0){
       if(!me.orbiters||me.orbiters.length!==me.orbiterCount)
         me.orbiters=Array.from({length:me.orbiterCount},(_,i)=>({angle:(i/me.orbiterCount)*Math.PI*2,dmgCooldown:0,x:0,y:0}));
-      const orbitR=r*2.3, orbSpeed=0.042, orbR=r*0.42;
+      const orbitR=r*2.3, orbSpeed=0.045, orbR=r*0.40;
       me.orbiters.forEach(orb=>{
         orb.angle+=orbSpeed;
         orb.x=me.x+Math.cos(orb.angle)*orbitR;
@@ -523,20 +638,20 @@ function loop(t){
             if(hit)break;
             const p=peers[id]; if(!p)continue;
             const pr=radiusFromLevel(p.level||1,p.bulk||0);
-            const od=Math.hypot(p.x-orb.x,p.y-orb.y);
+            const od=Math.hypot(p.rx-orb.x,p.ry-orb.y);
             if(od<pr+orbR){
-              net&&net.sendHit({dmg:7,byName:me.name+' (minion)',kx:(p.x-orb.x)/(od||1)*14,ky:(p.y-orb.y)/(od||1)*14},id);
-              orb.dmgCooldown=now+700; hit=true;
+              net&&net.sendHit({dmg:8,byName:me.name+' (minion)',kx:(p.rx-orb.x)/(od||1)*16,ky:(p.ry-orb.y)/(od||1)*16},id);
+              orb.dmgCooldown=now+650; hit=true;
             }
           }
           for(const id in bots){
             if(hit)break;
             const b=bots[id]; if(!b||b.down)continue;
             const br=radiusFromLevel(b.level||1,b.bulk||0);
-            const od=Math.hypot(b.x-orb.x,b.y-orb.y);
+            const od=Math.hypot(b.rx-orb.x,b.ry-orb.y);
             if(od<br+orbR){
-              net&&net.sendHit({dmg:7,byName:me.name+' (minion)',kx:(b.x-orb.x)/(od||1)*14,ky:(b.y-orb.y)/(od||1)*14},id);
-              orb.dmgCooldown=now+700; hit=true;
+              net&&net.sendHit({dmg:8,byName:me.name+' (minion)',kx:(b.rx-orb.x)/(od||1)*16,ky:(b.ry-orb.y)/(od||1)*16},id);
+              orb.dmgCooldown=now+650; hit=true;
             }
           }
         }
@@ -544,31 +659,33 @@ function loop(t){
     }
 
     // Lunge hit detection
-    if(now<me.lungeUntil){
+    if(!manualPaused && now<me.lungeUntil){
+      let berserkDmgMult=1;
+      if(me.berserkStacks>0 && me.hp/maxHpTotal<0.40) berserkDmgMult+=(0.20*me.berserkStacks);
+      const totalDmg=(16+me.level*1.3)*me.lungeDmgMult*berserkDmgMult;
+
       for(const id in peers){
         const p=peers[id]; if(!p||me.hitSet.has(id))continue;
         const pr=radiusFromLevel(p.level||1,p.bulk||0);
-        const pd=Math.hypot(p.x-me.x,p.y-me.y);
+        const pd=Math.hypot(p.rx-me.x,p.ry-me.y);
         if(pd<r+pr){
           me.hitSet.add(id);
-          const dmg=(16+me.level*1.2)*me.lungeDmgMult;
-          const dx=(p.x-me.x)/(pd||1), dy=(p.y-me.y)/(pd||1);
-          net&&net.sendHit({dmg,byName:me.name,kx:dx*KNOCK,ky:dy*KNOCK},id);
+          const dx=(p.rx-me.x)/(pd||1), dy=(p.ry-me.y)/(pd||1);
+          net&&net.sendHit({dmg:totalDmg,byName:me.name,kx:dx*KNOCK,ky:dy*KNOCK},id);
           if(peers[id]){peers[id].vkx=(peers[id].vkx||0)+dx*KNOCK*0.8;peers[id].vky=(peers[id].vky||0)+dy*KNOCK*0.8;}
-          if(me.vampiric) me.hp=Math.min(maxHpTotal,me.hp+dmg*me.vampiric);
+          if(me.vampiric) me.hp=Math.min(maxHpTotal,me.hp+totalDmg*me.vampiric);
         }
       }
       for(const id in bots){
         const b=bots[id]; if(!b||b.down||me.hitSet.has(id))continue;
         const br=radiusFromLevel(b.level||1,b.bulk||0);
-        const bd=Math.hypot(b.x-me.x,b.y-me.y);
+        const bd=Math.hypot(b.rx-me.x,b.ry-me.y);
         if(bd<r+br){
           me.hitSet.add(id);
-          const dmg=(16+me.level*1.2)*me.lungeDmgMult;
-          const dx=(b.x-me.x)/(bd||1), dy=(b.y-me.y)/(bd||1);
-          net&&net.sendHit({dmg,byName:me.name,kx:dx*KNOCK,ky:dy*KNOCK},id);
+          const dx=(b.rx-me.x)/(bd||1), dy=(b.ry-me.y)/(bd||1);
+          net&&net.sendHit({dmg:totalDmg,byName:me.name,kx:dx*KNOCK,ky:dy*KNOCK},id);
           if(bots[id]){bots[id].vkx=(bots[id].vkx||0)+dx*KNOCK*0.5;bots[id].vky=(bots[id].vky||0)+dy*KNOCK*0.5;}
-          if(me.vampiric) me.hp=Math.min(maxHpTotal,me.hp+dmg*me.vampiric);
+          if(me.vampiric) me.hp=Math.min(maxHpTotal,me.hp+totalDmg*me.vampiric);
         }
       }
     } else {
@@ -576,46 +693,64 @@ function loop(t){
       for(const id in peers){
         const p=peers[id]; if(!p)continue;
         const pr=radiusFromLevel(p.level||1,p.bulk||0);
-        const dx=me.x-p.x, dy=me.y-p.y, d=Math.hypot(dx,dy)||0.001, minD=r+pr;
+        const dx=me.x-p.rx, dy=me.y-p.ry, d=Math.hypot(dx,dy)||0.001, minD=r+pr;
         if(d<minD){const push=(minD-d)*0.5;me.x+=(dx/d)*push;me.y+=(dy/d)*push;}
       }
       for(const id in bots){
         const b=bots[id]; if(!b||b.down)continue;
         const br=radiusFromLevel(b.level||1,b.bulk||0);
-        const dx=me.x-b.x, dy=me.y-b.y, d=Math.hypot(dx,dy)||0.001, minD=r+br;
+        const dx=me.x-b.rx, dy=me.y-b.ry, d=Math.hypot(dx,dy)||0.001, minD=r+br;
         if(d<minD){const push=(minD-d)*0.5;me.x+=(dx/d)*push;me.y+=(dy/d)*push;}
       }
       me.x=Math.min(WORLD,Math.max(0,me.x)); me.y=Math.min(WORLD,Math.max(0,me.y));
     }
 
-    // State broadcast
+    // Always broadcast state so other players see position even if paused!
     if(t-lastPresence>55){
       lastPresence=t;
       net&&net.sendState({x:me.x,y:me.y,level:me.level,name:me.name,color:me.color,bulk:me.bulk,hp:me.hp,maxHp:maxHpTotal});
     }
 
-    // ── HUD ──
+    // ── HUD & Stats Update ──
     const cdTotal=LUNGE_COOLDOWN*me.lungeCdMult;
     const cdRemaining=Math.max(0,me.lungeCooldownUntil-now);
+    const xpPct=Math.round(xpProgress(me.xp)*100);
     document.getElementById('lvlText').textContent='Lv '+me.level;
     document.getElementById('xpText').textContent=me.xp+' xp';
-    document.getElementById('xpfill').style.width=(xpProgress(me.xp)*100)+'%';
+    document.getElementById('xpPctText').textContent=xpPct+'%';
+    document.getElementById('xpfill').style.width=xpPct+'%';
     document.getElementById('hpfill').style.width=(me.hp/maxHpTotal*100)+'%';
     document.getElementById('hpText').textContent=Math.ceil(me.hp)+'/'+maxHpTotal;
     document.getElementById('lungefill').style.width=(100-cdRemaining/cdTotal*100)+'%';
     document.getElementById('lungeTimerText').textContent=cdRemaining>0?(cdRemaining/1000).toFixed(1)+'s':'READY';
-    // Zone warning
     document.getElementById('zoneWarn').style.display=inZone?'block':'none';
-    // Shield indicator
+
+    // Detailed stats grid
+    document.getElementById('statSpeed').textContent=(me.speedMult*(me.berserkStacks&&me.hp/maxHpTotal<0.4?1+0.3*me.berserkStacks:1)).toFixed(2)+'x';
+    document.getElementById('statDmg').textContent=Math.round((16+me.level*1.3)*me.lungeDmgMult);
+    document.getElementById('statCd').textContent=(cdTotal/1000).toFixed(2)+'s';
+    document.getElementById('statVamp').textContent=Math.round(me.vampiric*100)+'%';
+    document.getElementById('statMag').textContent='+'+me.magnet;
+    document.getElementById('statXp').textContent=me.xpMult.toFixed(2)+'x';
+    document.getElementById('statMinions').textContent=me.orbiterCount+'/5';
+    document.getElementById('statWave').textContent=me.shockwaveLevel>0?'Lv '+me.shockwaveLevel:'-';
+
+    // Shield HUD
     const shRow=document.getElementById('shieldRow');
-    if(me.shieldMax){
+    if(me.shieldMaxCharges>0){
       shRow.style.display='block';
-      if(me.shieldActive){shRow.textContent='🛡️ Shield active';shRow.style.color='#5ee1c8';}
-      else{const rem=Math.max(0,me.shieldRechargeAt-now);shRow.textContent='🛡️ Recharging '+Math.ceil(rem/1000)+'s';shRow.style.color='#8b93b8';}
+      if(me.shieldCharges>0){
+        shRow.textContent=`🛡️ Shield: ${me.shieldCharges}/${me.shieldMaxCharges} ready`;
+        shRow.style.color='#5ee1c8';
+      } else {
+        const rem=Math.max(0,me.shieldRechargeAt-now);
+        shRow.textContent=`🛡️ Recharging (${Math.ceil(rem/1000)}s)`;
+        shRow.style.color='#8b93b8';
+      }
     } else shRow.style.display='none';
   }
 
-  // Smooth interpolation with ice knockback velocity
+  // Smooth peer and bot interpolation
   for(const id in peers){
     const p=peers[id]; if(!p)continue;
     p.vkx=(p.vkx||0)*VEL_FRICTION; p.vky=(p.vky||0)*VEL_FRICTION;
@@ -643,7 +778,7 @@ function draw(){
   for(let y=0;y<=WORLD;y+=80){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WORLD,y);ctx.stroke();}
   ctx.strokeRect(0,0,WORLD,WORLD);
 
-  // Danger zone — pulsing red fill + animated ring + label
+  // Danger zone
   const pulse=Math.sin(Date.now()*0.003)*0.5+0.5;
   ctx.beginPath(); ctx.arc(FCX,FCY,CENTER_RADIUS,0,Math.PI*2);
   ctx.fillStyle=`rgba(220,40,40,${0.04+pulse*0.05})`; ctx.fill();
@@ -660,6 +795,23 @@ function draw(){
     if(f.big){ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=1.5;ctx.stroke();}
   }
 
+  // Visual Effects (Shockwave blasts, Shield breaks)
+  for(let i=visualFx.length-1;i>=0;i--){
+    const fx=visualFx[i];
+    if(fx.type==='shockwave'){
+      fx.r+=(fx.maxR-fx.r)*0.16;
+      fx.alpha*=0.91;
+      ctx.beginPath(); ctx.arc(fx.x,fx.y,fx.r,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(94,225,200,${fx.alpha*0.85})`; ctx.lineWidth=4*fx.alpha+1; ctx.stroke();
+      if(fx.alpha<0.04) visualFx.splice(i,1);
+    } else if(fx.type==='shieldBreak'){
+      fx.r+=2; fx.alpha*=0.88;
+      ctx.beginPath(); ctx.arc(fx.x,fx.y,fx.r,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(94,225,200,${fx.alpha})`; ctx.lineWidth=2; ctx.stroke();
+      if(fx.alpha<0.05) visualFx.splice(i,1);
+    }
+  }
+
   // Peers
   for(const id in peers){
     const p=peers[id]; if(!p)continue;
@@ -674,11 +826,11 @@ function draw(){
     drawBlob(b.rx,b.ry,radiusFromLevel(b.level||1,b.bulk||0),b.color,b.name,b.level,b.hp/b.maxHp,null);
   }
 
-  // Orbiting minions (drawn before player so they appear behind)
+  // Orbiters
   if(me&&alive&&me.orbiters){
     const r=radiusFromLevel(me.level,me.bulk);
-    const orbR=r*0.42;
-    ctx.globalAlpha=0.72;
+    const orbR=r*0.40;
+    ctx.globalAlpha=0.78;
     me.orbiters.forEach(orb=>{
       if(orb.x===0&&orb.y===0)return;
       drawBlob(orb.x,orb.y,orbR,me.color,'',0,null,ownSkin&&ownSkin.complete?ownSkin:null);
@@ -690,11 +842,14 @@ function draw(){
   if(me&&alive){
     const r=radiusFromLevel(me.level,me.bulk);
     drawBlob(me.x,me.y,r,me.color,me.name+' (you)',me.level,me.hp/(HP_BASE+me.maxHpBonus),ownSkin&&ownSkin.complete?ownSkin:null);
-    // Shield ring
-    if(me.shieldActive){
-      ctx.beginPath(); ctx.arc(me.x,me.y,r+8,0,Math.PI*2);
-      ctx.strokeStyle='rgba(94,225,200,0.8)'; ctx.lineWidth=2.5;
-      ctx.setLineDash([7,5]); ctx.stroke(); ctx.setLineDash([]);
+
+    // Shield rings (stacked visually!)
+    if(me.shieldCharges>0){
+      for(let s=0;s<me.shieldCharges;s++){
+        ctx.beginPath(); ctx.arc(me.x,me.y,r+8+s*5,0,Math.PI*2);
+        ctx.strokeStyle=`rgba(94,225,200,${0.85-s*0.2})`; ctx.lineWidth=2.5;
+        ctx.setLineDash([7,5]); ctx.stroke(); ctx.setLineDash([]);
+      }
     }
   }
 
