@@ -28,7 +28,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 #status{margin-top:10px;font-size:11px;color:var(--sub);}
 
 /* HUD & Stats */
-#hud{position:fixed;left:12px;bottom:12px;z-index:5;background:rgba(17,22,42,0.92);backdrop-filter:blur(6px);border:1px solid var(--panel-b);border-radius:12px;padding:10px 14px;font-size:13px;display:none;min-width:210px;max-width:260px;}
+#hud{position:fixed;left:12px;bottom:12px;z-index:5;background:rgba(17,22,42,0.92);backdrop-filter:blur(6px);border:1px solid var(--panel-b);border-radius:12px;padding:10px 14px;font-size:13px;display:none;min-width:215px;max-width:265px;}
 #hud .lvl{font-weight:700;color:var(--accent);}
 .bar-wrap{margin-top:6px;}
 .bar-lbl{display:flex;justify-content:space-between;font-size:9.5px;color:var(--sub);margin-bottom:2px;}
@@ -211,7 +211,7 @@ for(let i=0;i<CENTER_FOOD;i++){
 }
 const eaten=new Set();
 
-// Visual effects array for ripples, shockwaves, particles
+// Visual effects array for ripples, particles, bursts
 let visualFx=[];
 
 // ── Helpers ───────────────────────────────────────────────────────────────
@@ -232,20 +232,21 @@ function freshStats(){
     speedMult:1, magnet:0, xpMult:1, bulk:0,
     lungeDmgMult:1, lungeCdMult:1, lungeDurMult:1,
     regenMult:1, maxHpBonus:0,
-    vampiric:0,          // % lifesteal
-    berserkStacks:0,     // stackable: +30% speed & +15% dmg per stack below 40% HP
-    shockwaveLevel:0,    // stackable: level 1, 2, 3...
-    shieldMaxCharges:0,  // stackable: 1, 2, 3 hits absorbed
-    shieldCharges:0,     // current charges available
-    shieldCooldownMs:22000, // decreases with stacks
+    vampiric:0,
+    berserkStacks:0,
+    shockwaveLevel:0,
+    shockwaveCooldownUntil:0, // internal 4s cooldown
+    shieldMaxCharges:0,       // 1 max charge, balanced buffer
+    shieldCharges:0,
+    shieldCooldownMs:32000,    // 32s recharge, out of combat only
     shieldRechargeAt:0,
-    orbiterCount:0,      // stackable up to 5
+    orbiterCount:0,           // up to 4 minions
     orbiters:null,
-    upgradeCounts:{},    // map tracking stack count for each upgrade id
+    upgradeCounts:{},
   };
 }
 
-// ── Upgrade pool (Tiered & Fully Stackable) ─────────────────────────────────
+// ── Upgrade pool (Tiered, Balanced & Stackable) ─────────────────────────────
 const UPGRADE_POOL=[
   // ── Tier 1 (Common) ──
   {tier:1,id:'swift',     name:'Swift',        desc:'+15% movement speed',              icon:'⚡', apply:m=>m.speedMult*=1.15},
@@ -262,18 +263,18 @@ const UPGRADE_POOL=[
   {tier:2,id:'afterburn', name:'Afterburner',  desc:'+35% lunge distance and launch',    icon:'🚀', apply:m=>m.lungeDurMult+=0.35},
   {tier:2,id:'berserk',   name:'Berserk',      desc:'Below 40% HP: +30% speed & dmg',    icon:'😡', apply:m=>m.berserkStacks=(m.berserkStacks||0)+1},
 
-  // ── Tier 3 (Unlocks Lv 6 - Powerful!) ──
-  {tier:3,id:'minions',   name:'Minions',      desc:'Add +1 orbiting defender (up to 5)',icon:'🫧',
-    maxStack:5, apply:m=>{ m.orbiterCount=Math.min(5,(m.orbiterCount||0)+1); m.orbiters=null; }},
-  {tier:3,id:'shield',    name:'Energy Shield',desc:'+1 shield charge & faster recharge',icon:'🛡️',
-    maxStack:3, apply:m=>{
-      m.shieldMaxCharges=(m.shieldMaxCharges||0)+1;
-      m.shieldCharges=m.shieldMaxCharges;
-      m.shieldCooldownMs=Math.max(8000, (m.shieldCooldownMs||22000)-4000);
+  // ── Tier 3 (Unlocks Lv 6 - Balanced & Tactical) ──
+  {tier:3,id:'minions',   name:'Minion',       desc:'+1 defender (body-blocks, attacks & eats food)',icon:'🫧',
+    maxStack:4, apply:m=>{ m.orbiterCount=Math.min(4,(m.orbiterCount||0)+1); m.orbiters=null; }},
+  {tier:3,id:'shield',    name:'Energy Shield',desc:'Absorbs up to 35 dmg, recharges out of combat',icon:'🛡️',
+    maxStack:2, apply:m=>{
+      m.shieldMaxCharges=1;
+      m.shieldCharges=1;
+      m.shieldCooldownMs=(m.upgradeCounts['shield']?22000:32000);
       m.shieldRechargeAt=0;
     }},
-  {tier:3,id:'shockwave', name:'Shockwave',    desc:'Lunge triggers large knockback blast',icon:'💫',
-    maxStack:4, apply:m=>m.shockwaveLevel=(m.shockwaveLevel||0)+1},
+  {tier:3,id:'shockwave', name:'Shockwave',    desc:'Lunge emits tactical knockback pulse (4s CD)',icon:'💫',
+    maxStack:3, apply:m=>m.shockwaveLevel=(m.shockwaveLevel||0)+1},
 ];
 
 let pendingUpgrades=0, upgradeOpen=false;
@@ -327,7 +328,6 @@ function checkUpgradeSteps(){
   while(me.level-me.lastUpgradeLevel>=me.upgradeStep){
     pendingUpgrades++;
     me.lastUpgradeLevel+=me.upgradeStep;
-    // Step grows smoothly after Lv 5
     if(me.lastUpgradeLevel>=5) me.upgradeStep+=1;
   }
   if(pendingUpgrades>0 && !upgradeOpen) showUpgradePicker();
@@ -417,34 +417,62 @@ function setupNet(code){
 
   socket.on('hit',data=>{
     if(!alive)return;
-    // Shield absorbs hit
+
+    // Minion Body-Blocking!
+    if(me.orbiterCount>0 && me.orbiters){
+      const aliveMinions=me.orbiters.filter(o=>o.hp>0 && performance.now()>=o.respawnAt);
+      if(aliveMinions.length>0){
+        let hitAngle=Math.atan2(-(data.ky||0), -(data.kx||0));
+        let bestMinion=null, bestDiff=Infinity;
+        aliveMinions.forEach(o=>{
+          let diff=Math.abs(Math.atan2(o.y-me.y, o.x-me.x) - hitAngle);
+          if(diff>Math.PI) diff=2*Math.PI-diff;
+          if(diff<bestDiff){ bestDiff=diff; bestMinion=o; }
+        });
+        // If minion is in front of the hit (or pack of 3+ shields you):
+        if(bestMinion && (bestDiff<1.4 || aliveMinions.length>=3)){
+          bestMinion.hp-=data.dmg;
+          visualFx.push({type:'minionHit',x:bestMinion.x,y:bestMinion.y,r:14,alpha:1});
+          if(bestMinion.hp<=0){
+            bestMinion.hp=0;
+            bestMinion.respawnAt=performance.now()+14000;
+            visualFx.push({type:'minionPop',x:bestMinion.x,y:bestMinion.y,color:me.color});
+          }
+          return; // Minion body-blocked the hit!
+        }
+      }
+    }
+
+    // Shield (Balanced: Absorbs up to 35 dmg, excess bleeds through)
     if(me.shieldCharges>0){
       me.shieldCharges--;
-      if(me.shieldRechargeAt<=performance.now()) me.shieldRechargeAt=performance.now()+me.shieldCooldownMs;
+      me.shieldRechargeAt=performance.now()+me.shieldCooldownMs;
       visualFx.push({type:'shieldBreak',x:me.x,y:me.y,r:radiusFromLevel(me.level,me.bulk)+10,alpha:1});
-      return;
+      const absorbed=Math.min(35, data.dmg);
+      data.dmg-=absorbed;
+      if(data.dmg<=0) return;
     }
+
     me.hp=Math.max(0,me.hp-data.dmg);
     me.lastDamage=performance.now();
     // Ice knockback velocity
     me.kx+=(data.kx||0)*0.8;
     me.ky+=(data.ky||0)*0.8;
+
     if(me.hp<=0){
       alive=false;
-      const retainedXp=Math.floor(me.xp*0.40); // Keep 40% of XP!
+      const retainedXp=Math.floor(me.xp*0.40);
       const retainedLvl=levelFromXp(retainedXp);
       document.getElementById('finalLvl').textContent=me.level;
       document.getElementById('retainedXpText').textContent=retainedXp;
       document.getElementById('retainedLvlText').textContent=retainedLvl;
       document.getElementById('deathMsg').textContent=(data.byName||'Someone')+' finished you off!';
       document.getElementById('respawn').style.display='flex';
-      // Calculate and award XP bounty to killer
       const xpBounty=Math.max(120,Math.floor(me.level*90+me.xp*0.35));
       net.sendKilled({xpBounty,victimName:me.name,victimLevel:me.level},data.from);
     }
   });
 
-  // Reward killer with rich XP bounty
   socket.on('killed',data=>{
     const gain=Math.round((data.xpBounty||110)*(me.xpMult||1));
     me.xp+=gain;
@@ -471,17 +499,17 @@ function tryLunge(){
   me.lungeUntil=now+dur;
   me.lungeEndlagUntil=now+dur+LUNGE_ENDLAG;
   me.lungeCooldownUntil=now+LUNGE_COOLDOWN*me.lungeCdMult;
-  // Launch momentum burst
   const launchSpeed=14*(1+(me.lungeDurMult-1)*0.4);
   me.kx=me.lungeDX*launchSpeed; me.ky=me.lungeDY*launchSpeed;
   me.hitSet=new Set();
 
-  // Shockwave implementation & visual ripple
-  if(me.shockwaveLevel>0){
+  // Balanced Shockwave: Has 4s internal cooldown, reasonable blast radius and damage
+  if(me.shockwaveLevel>0 && now>=me.shockwaveCooldownUntil){
+    me.shockwaveCooldownUntil=now+4000;
     const r=radiusFromLevel(me.level,me.bulk);
-    const blastRadius=r+180+me.shockwaveLevel*65;
-    const waveDmg=(14+me.level*1.5)*me.shockwaveLevel*me.lungeDmgMult;
-    const waveKnock=100+me.shockwaveLevel*40;
+    const blastRadius=r+85+me.shockwaveLevel*35;
+    const waveDmg=(7+me.level*0.75)*me.shockwaveLevel*me.lungeDmgMult;
+    const waveKnock=65+me.shockwaveLevel*20;
 
     visualFx.push({type:'shockwave',x:me.x,y:me.y,r:r,maxR:blastRadius,alpha:1,color:'#5ee1c8'});
 
@@ -506,7 +534,7 @@ function tryLunge(){
   }
 }
 
-// ── Respawn (Retaining % XP) ──────────────────────────────────────────────
+// ── Respawn ───────────────────────────────────────────────────────────────
 document.getElementById('respawnBtn').onclick=()=>{
   const sp=randSpawn();
   const retainedXp=Math.floor(me.xp*0.40);
@@ -526,7 +554,6 @@ document.getElementById('respawnBtn').onclick=()=>{
   document.getElementById('upgradeOverlay').style.display='none';
   alive=true;
 
-  // Immediately award upgrade points for retained levels!
   checkUpgradeSteps();
 };
 
@@ -549,18 +576,17 @@ function loop(t){
     const now=performance.now();
     const maxHpTotal=HP_BASE+me.maxHpBonus;
 
-    // Shield recharge timer (runs whether paused or not)
-    if(me.shieldMaxCharges>0 && me.shieldCharges<me.shieldMaxCharges && now>=me.shieldRechargeAt){
-      me.shieldCharges++;
-      if(me.shieldCharges<me.shieldMaxCharges) me.shieldRechargeAt=now+me.shieldCooldownMs;
+    // Shield recharge: only recharges when OUT OF COMBAT for 5.5s
+    if(me.shieldMaxCharges>0 && me.shieldCharges<me.shieldMaxCharges && now-me.lastDamage>REGEN_DELAY && now>=me.shieldRechargeAt){
+      me.shieldCharges=me.shieldMaxCharges;
     }
 
-    // Danger zone DoT (APPLIES EVEN IF PAUSED!)
+    // Danger zone DoT (Still applies when paused!)
     const distC=Math.hypot(me.x-WORLD/2,me.y-WORLD/2);
     const inZone=distC<CENTER_RADIUS;
     if(inZone){
       me.hp=Math.max(0,me.hp-CENTER_DOT/60);
-      me.lastDamage=now; // prevents regen
+      me.lastDamage=now;
       if(me.hp<=0){
         alive=false;
         const retainedXp=Math.floor(me.xp*0.40);
@@ -578,10 +604,9 @@ function loop(t){
       me.hp=Math.min(maxHpTotal,me.hp+REGEN_RATE*me.regenMult/60);
     }
 
-    // Ice physics: decay knockback velocity
+    // Ice physics
     me.kx*=VEL_FRICTION; me.ky*=VEL_FRICTION;
 
-    // Active movement only if NOT paused
     if(!manualPaused){
       let mvx,mvy;
       if(now<me.lungeUntil){
@@ -589,7 +614,6 @@ function loop(t){
       } else {
         const {dx,dy}=ptrToWorld(); const dist=Math.hypot(dx,dy)||1;
         let speed=BASE_SPEED/(1+me.level*0.05)*me.speedMult;
-        // Berserk speed bonus
         if(me.berserkStacks>0 && me.hp/maxHpTotal<0.40) speed*=(1+0.30*me.berserkStacks);
         if(now<me.lungeEndlagUntil) speed*=0.42;
         mvx=dist>6?dx/dist*speed:0; mvy=dist>6?dy/dist*speed:0;
@@ -597,14 +621,13 @@ function loop(t){
       me.x=Math.min(WORLD,Math.max(0,me.x+mvx+me.kx));
       me.y=Math.min(WORLD,Math.max(0,me.y+mvy+me.ky));
     } else {
-      // While paused, only drift with lingering knockback
       me.x=Math.min(WORLD,Math.max(0,me.x+me.kx));
       me.y=Math.min(WORLD,Math.max(0,me.y+me.ky));
     }
 
     const r=radiusFromLevel(me.level,me.bulk);
 
-    // Food collection (only when unpaused)
+    // Food collection
     if(!manualPaused){
       for(let i=0;i<food.length;i++){
         if(eaten.has(i))continue;
@@ -623,15 +646,46 @@ function loop(t){
       }
     }
 
-    // Orbiting minions
+    // Minions Logic: Deals damage, takes damage, body-blocks & eats food
     if(me.orbiterCount>0){
-      if(!me.orbiters||me.orbiters.length!==me.orbiterCount)
-        me.orbiters=Array.from({length:me.orbiterCount},(_,i)=>({angle:(i/me.orbiterCount)*Math.PI*2,dmgCooldown:0,x:0,y:0}));
-      const orbitR=r*2.3, orbSpeed=0.045, orbR=r*0.40;
+      if(!me.orbiters||me.orbiters.length!==me.orbiterCount){
+        me.orbiters=Array.from({length:me.orbiterCount},(_,i)=>({
+          angle:(i/me.orbiterCount)*Math.PI*2,
+          hp:40,
+          maxHp:40,
+          respawnAt:0,
+          dmgCooldown:0,
+          x:0,
+          y:0
+        }));
+      }
+      const orbitR=r*2.35, orbSpeed=0.045, orbR=r*0.42;
       me.orbiters.forEach(orb=>{
+        if(now<orb.respawnAt) return; // Currently dead
+        if(orb.hp<=0 && now>=orb.respawnAt){ orb.hp=orb.maxHp; } // Respawn!
+
         orb.angle+=orbSpeed;
         orb.x=me.x+Math.cos(orb.angle)*orbitR;
         orb.y=me.y+Math.sin(orb.angle)*orbitR;
+
+        // Minions eat nearby food for the player!
+        if(!manualPaused){
+          for(let i=0;i<food.length;i++){
+            if(eaten.has(i))continue;
+            const f=food[i];
+            if(Math.hypot(f.x-orb.x, f.y-orb.y)<orbR+5){
+              eaten.add(i); me.xp+=Math.round((f.big?18:7)*me.xpMult); me.level=levelFromXp(me.xp);
+              net&&net.sendFood({i}); checkUpgradeSteps();
+              setTimeout(()=>{
+                if(f.big){const ang=Math.random()*Math.PI*2,rad=Math.sqrt(Math.random())*CENTER_RADIUS;food[i].x=FCX+Math.cos(ang)*rad;food[i].y=FCY+Math.sin(ang)*rad;}
+                else{food[i].x=60+Math.random()*(WORLD-120);food[i].y=60+Math.random()*(WORLD-120);}
+                eaten.delete(i); net&&net.sendFood({i,respawn:true,x:food[i].x,y:food[i].y});
+              },9000+Math.random()*6000);
+            }
+          }
+        }
+
+        // Minion combat: Deals 13 dmg, takes 15 contact dmg
         if(now>=orb.dmgCooldown){
           let hit=false;
           for(const id in peers){
@@ -640,8 +694,10 @@ function loop(t){
             const pr=radiusFromLevel(p.level||1,p.bulk||0);
             const od=Math.hypot(p.rx-orb.x,p.ry-orb.y);
             if(od<pr+orbR){
-              net&&net.sendHit({dmg:8,byName:me.name+' (minion)',kx:(p.rx-orb.x)/(od||1)*16,ky:(p.ry-orb.y)/(od||1)*16},id);
-              orb.dmgCooldown=now+650; hit=true;
+              net&&net.sendHit({dmg:13,byName:me.name+' (minion)',kx:(p.rx-orb.x)/(od||1)*18,ky:(p.ry-orb.y)/(od||1)*18},id);
+              orb.hp-=15;
+              orb.dmgCooldown=now+650;
+              hit=true;
             }
           }
           for(const id in bots){
@@ -650,9 +706,16 @@ function loop(t){
             const br=radiusFromLevel(b.level||1,b.bulk||0);
             const od=Math.hypot(b.rx-orb.x,b.ry-orb.y);
             if(od<br+orbR){
-              net&&net.sendHit({dmg:8,byName:me.name+' (minion)',kx:(b.rx-orb.x)/(od||1)*16,ky:(b.ry-orb.y)/(od||1)*16},id);
-              orb.dmgCooldown=now+650; hit=true;
+              net&&net.sendHit({dmg:13,byName:me.name+' (minion)',kx:(b.rx-orb.x)/(od||1)*18,ky:(b.ry-orb.y)/(od||1)*18},id);
+              orb.hp-=15;
+              orb.dmgCooldown=now+650;
+              hit=true;
             }
+          }
+          if(orb.hp<=0){
+            orb.hp=0;
+            orb.respawnAt=now+14000;
+            visualFx.push({type:'minionPop',x:orb.x,y:orb.y,color:me.color});
           }
         }
       });
@@ -705,13 +768,12 @@ function loop(t){
       me.x=Math.min(WORLD,Math.max(0,me.x)); me.y=Math.min(WORLD,Math.max(0,me.y));
     }
 
-    // Always broadcast state so other players see position even if paused!
     if(t-lastPresence>55){
       lastPresence=t;
       net&&net.sendState({x:me.x,y:me.y,level:me.level,name:me.name,color:me.color,bulk:me.bulk,hp:me.hp,maxHp:maxHpTotal});
     }
 
-    // ── HUD & Stats Update ──
+    // ── HUD Updates ──
     const cdTotal=LUNGE_COOLDOWN*me.lungeCdMult;
     const cdRemaining=Math.max(0,me.lungeCooldownUntil-now);
     const xpPct=Math.round(xpProgress(me.xp)*100);
@@ -732,20 +794,31 @@ function loop(t){
     document.getElementById('statVamp').textContent=Math.round(me.vampiric*100)+'%';
     document.getElementById('statMag').textContent='+'+me.magnet;
     document.getElementById('statXp').textContent=me.xpMult.toFixed(2)+'x';
-    document.getElementById('statMinions').textContent=me.orbiterCount+'/5';
-    document.getElementById('statWave').textContent=me.shockwaveLevel>0?'Lv '+me.shockwaveLevel:'-';
+    const aliveOrbs=me.orbiters?me.orbiters.filter(o=>o.hp>0&&now>=o.respawnAt).length:0;
+    document.getElementById('statMinions').textContent=me.orbiterCount>0?`${aliveOrbs}/${me.orbiterCount}`:'0';
+
+    if(me.shockwaveLevel>0){
+      const waveCd=Math.max(0, me.shockwaveCooldownUntil-now);
+      document.getElementById('statWave').textContent=waveCd>0?`${(waveCd/1000).toFixed(1)}s`:'READY';
+    } else document.getElementById('statWave').textContent='-';
 
     // Shield HUD
     const shRow=document.getElementById('shieldRow');
     if(me.shieldMaxCharges>0){
       shRow.style.display='block';
       if(me.shieldCharges>0){
-        shRow.textContent=`🛡️ Shield: ${me.shieldCharges}/${me.shieldMaxCharges} ready`;
+        shRow.textContent='🛡️ Shield: READY (35 dmg block)';
         shRow.style.color='#5ee1c8';
       } else {
-        const rem=Math.max(0,me.shieldRechargeAt-now);
-        shRow.textContent=`🛡️ Recharging (${Math.ceil(rem/1000)}s)`;
-        shRow.style.color='#8b93b8';
+        const inCombat=now-me.lastDamage<=REGEN_DELAY;
+        if(inCombat){
+          shRow.textContent='🛡️ Recharging (out of combat only)';
+          shRow.style.color='#ff9f6b';
+        } else {
+          const rem=Math.max(0,me.shieldRechargeAt-now);
+          shRow.textContent=`🛡️ Recharging (${Math.ceil(rem/1000)}s)`;
+          shRow.style.color='#8b93b8';
+        }
       }
     } else shRow.style.display='none';
   }
@@ -795,11 +868,12 @@ function draw(){
     if(f.big){ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=1.5;ctx.stroke();}
   }
 
-  // Visual Effects (Shockwave blasts, Shield breaks)
+  // Visual Effects
+  const now=performance.now();
   for(let i=visualFx.length-1;i>=0;i--){
     const fx=visualFx[i];
     if(fx.type==='shockwave'){
-      fx.r+=(fx.maxR-fx.r)*0.16;
+      fx.r+=(fx.maxR-fx.r)*0.18;
       fx.alpha*=0.91;
       ctx.beginPath(); ctx.arc(fx.x,fx.y,fx.r,0,Math.PI*2);
       ctx.strokeStyle=`rgba(94,225,200,${fx.alpha*0.85})`; ctx.lineWidth=4*fx.alpha+1; ctx.stroke();
@@ -807,8 +881,31 @@ function draw(){
     } else if(fx.type==='shieldBreak'){
       fx.r+=2; fx.alpha*=0.88;
       ctx.beginPath(); ctx.arc(fx.x,fx.y,fx.r,0,Math.PI*2);
-      ctx.strokeStyle=`rgba(94,225,200,${fx.alpha})`; ctx.lineWidth=2; ctx.stroke();
+      ctx.strokeStyle=`rgba(94,225,200,${fx.alpha})`; ctx.lineWidth=2.5; ctx.stroke();
       if(fx.alpha<0.05) visualFx.splice(i,1);
+    } else if(fx.type==='minionHit'){
+      fx.r+=1.5; fx.alpha*=0.85;
+      ctx.beginPath(); ctx.arc(fx.x,fx.y,fx.r,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(255,255,255,${fx.alpha})`; ctx.lineWidth=2; ctx.stroke();
+      if(fx.alpha<0.05) visualFx.splice(i,1);
+    } else if(fx.type==='minionPop'){
+      if(!fx.sparks){
+        fx.sparks=Array.from({length:10},()=>({
+          x:fx.x, y:fx.y,
+          vx:(Math.random()-0.5)*7, vy:(Math.random()-0.5)*7,
+          alpha:1
+        }));
+      }
+      let anyAlive=false;
+      fx.sparks.forEach(s=>{
+        s.x+=s.vx; s.y+=s.vy; s.alpha*=0.90;
+        if(s.alpha>0.05){
+          anyAlive=true;
+          ctx.beginPath(); ctx.arc(s.x,s.y,3,0,Math.PI*2);
+          ctx.fillStyle=`rgba(94,225,200,${s.alpha})`; ctx.fill();
+        }
+      });
+      if(!anyAlive) visualFx.splice(i,1);
     }
   }
 
@@ -826,16 +923,32 @@ function draw(){
     drawBlob(b.rx,b.ry,radiusFromLevel(b.level||1,b.bulk||0),b.color,b.name,b.level,b.hp/b.maxHp,null);
   }
 
-  // Orbiters
+  // Orbiting Minions: Render with individual HP bars & respawn ghost indicator
   if(me&&alive&&me.orbiters){
     const r=radiusFromLevel(me.level,me.bulk);
-    const orbR=r*0.40;
-    ctx.globalAlpha=0.78;
+    const orbR=r*0.42;
     me.orbiters.forEach(orb=>{
+      if(now<orb.respawnAt){
+        // Ghost placeholder showing respawn progress
+        ctx.beginPath(); ctx.arc(orb.x,orb.y,orbR,0,Math.PI*2);
+        ctx.strokeStyle='rgba(255,255,255,0.18)'; ctx.lineWidth=1.5;
+        ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+        return;
+      }
       if(orb.x===0&&orb.y===0)return;
+
+      // Draw alive minion with mini health bar
+      ctx.globalAlpha=0.88;
       drawBlob(orb.x,orb.y,orbR,me.color,'',0,null,ownSkin&&ownSkin.complete?ownSkin:null);
+      ctx.globalAlpha=1;
+
+      // Minion mini HP bar
+      const hpFrac=Math.max(0,orb.hp/orb.maxHp);
+      ctx.fillStyle='rgba(0,0,0,0.5)';
+      ctx.fillRect(orb.x-orbR, orb.y-orbR-6, orbR*2, 3.5);
+      ctx.fillStyle=hpFrac>0.35?'#5ee1c8':'#ff6b6b';
+      ctx.fillRect(orb.x-orbR, orb.y-orbR-6, orbR*2*hpFrac, 3.5);
     });
-    ctx.globalAlpha=1;
   }
 
   // Local player
@@ -843,19 +956,17 @@ function draw(){
     const r=radiusFromLevel(me.level,me.bulk);
     drawBlob(me.x,me.y,r,me.color,me.name+' (you)',me.level,me.hp/(HP_BASE+me.maxHpBonus),ownSkin&&ownSkin.complete?ownSkin:null);
 
-    // Shield rings (stacked visually!)
+    // Shield ring
     if(me.shieldCharges>0){
-      for(let s=0;s<me.shieldCharges;s++){
-        ctx.beginPath(); ctx.arc(me.x,me.y,r+8+s*5,0,Math.PI*2);
-        ctx.strokeStyle=`rgba(94,225,200,${0.85-s*0.2})`; ctx.lineWidth=2.5;
-        ctx.setLineDash([7,5]); ctx.stroke(); ctx.setLineDash([]);
-      }
+      ctx.beginPath(); ctx.arc(me.x,me.y,r+8,0,Math.PI*2);
+      ctx.strokeStyle='rgba(94,225,200,0.85)'; ctx.lineWidth=2.5;
+      ctx.setLineDash([7,5]); ctx.stroke(); ctx.setLineDash([]);
     }
   }
 
   ctx.restore();
 
-  // Screen vignette when inside danger zone
+  // Danger zone vignette
   if(me&&alive){
     const distC=Math.hypot(me.x-WORLD/2,me.y-WORLD/2);
     if(distC<CENTER_RADIUS){
