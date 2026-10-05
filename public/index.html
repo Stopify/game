@@ -418,12 +418,17 @@ function setupNet(code){
     sendSkin:d=>socket.emit('skin',d),
     sendHit:(d,target)=>socket.emit('hit',{...d,target}),
     sendKilled:(d,target)=>socket.emit('killed',{...d,target}),
+    sendFx:d=>socket.emit('fx',d),
   };
   socket.on('connect',()=>{ socket.emit('join',code); updateLobbyTag(code); });
   socket.on('connect_error',()=>{ document.getElementById('lobbyTagText').textContent=code+' (server waking up… retrying)'; });
   socket.on('disconnect',()=>{ document.getElementById('lobbyTagText').textContent=code+' (reconnecting…)'; });
 
-  // Receive peer state (now including shield & minions!)
+  socket.on('fx',data=>{
+    visualFx.push(data);
+  });
+
+  // Receive peer state (including shield, minions, thorns, frost, berserk!)
   socket.on('state',data=>{
     const prev=peers[data.id];
     let rx=data.x, ry=data.y;
@@ -434,7 +439,10 @@ function setupNet(code){
       vkx:prev?prev.vkx||0:0,
       vky:prev?prev.vky||0:0,
       shield:data.shield||0,
-      minions:data.minions||0
+      minions:data.minions||0,
+      thorns:data.thorns||0,
+      frost:data.frost||0,
+      berserk:data.berserk||0
     };
     updateLobbyTag(code);
   });
@@ -469,11 +477,13 @@ function setupNet(code){
         });
         if(bestMinion && (bestDiff<1.4 || aliveMinions.length>=3)){
           bestMinion.hp-=data.dmg;
-          visualFx.push({type:'minionHit',x:bestMinion.x,y:bestMinion.y,r:14,alpha:1});
+          const mHitFx={type:'minionHit',x:bestMinion.x,y:bestMinion.y,r:14,alpha:1};
+          visualFx.push(mHitFx); net&&net.sendFx(mHitFx);
           if(bestMinion.hp<=0){
             bestMinion.hp=0;
             bestMinion.respawnAt=performance.now()+14000;
-            visualFx.push({type:'minionPop',x:bestMinion.x,y:bestMinion.y,color:me.color});
+            const mPopFx={type:'minionPop',x:bestMinion.x,y:bestMinion.y,color:me.color};
+            visualFx.push(mPopFx); net&&net.sendFx(mPopFx);
           }
           return; // Minion body-blocked the hit!
         }
@@ -484,7 +494,8 @@ function setupNet(code){
     if(me.shieldCharges>0){
       me.shieldCharges--;
       if(me.shieldRechargeAt<=performance.now()) me.shieldRechargeAt=performance.now()+me.shieldCooldownMs;
-      visualFx.push({type:'shieldBreak',x:me.x,y:me.y,r:radiusFromLevel(me.level,me.bulk)+10,alpha:1});
+      const shBreakFx={type:'shieldBreak',x:me.x,y:me.y,r:radiusFromLevel(me.level,me.bulk)+10,alpha:1};
+      visualFx.push(shBreakFx); net&&net.sendFx(shBreakFx);
       const absorbed=Math.min(40, data.dmg);
       data.dmg-=absorbed;
       if(data.dmg<=0) return;
@@ -576,7 +587,9 @@ function tryLunge(){
     const waveDmg=(7+me.level*0.75)*me.shockwaveLevel*me.lungeDmgMult;
     const waveKnock=65+me.shockwaveLevel*20;
 
-    visualFx.push({type:'shockwave',x:me.x,y:me.y,r:r,maxR:blastRadius,alpha:1,color:'#5ee1c8'});
+    const swFx={type:'shockwave',x:me.x,y:me.y,r:r,maxR:blastRadius,alpha:1,color:'#5ee1c8'};
+    visualFx.push(swFx);
+    net&&net.sendFx(swFx);
 
     for(const id in peers){
       const p=peers[id]; if(!p)continue;
@@ -789,7 +802,9 @@ function loop(t){
           if(orb.hp<=0){
             orb.hp=0;
             orb.respawnAt=now+14000;
-            visualFx.push({type:'minionPop',x:orb.x,y:orb.y,color:me.color});
+            const popFx={type:'minionPop',x:orb.x,y:orb.y,color:me.color};
+            visualFx.push(popFx);
+            net&&net.sendFx(popFx);
           }
         }
       });
@@ -868,7 +883,10 @@ function loop(t){
         x:me.x,y:me.y,level:me.level,name:me.name,color:me.color,bulk:me.bulk,
         hp:me.hp,maxHp:maxHpTotal,
         shield:me.shieldCharges||0,
-        minions:me.orbiterCount||0
+        minions:me.orbiterCount||0,
+        thorns:me.thorns||0,
+        frost:me.frostAura?1:0,
+        berserk:(me.berserkStacks>0 && (me.hp/maxHpTotal)<0.40)?1:0
       });
     }
 
@@ -1041,6 +1059,29 @@ function draw(){
         ctx.setLineDash([7,5]); ctx.stroke(); ctx.setLineDash([]);
       }
     }
+
+    // Draw Peer's Spikes
+    if(p.thorns>0){
+      ctx.beginPath(); ctx.arc(p.rx,p.ry,pr+3,0,Math.PI*2);
+      ctx.strokeStyle='rgba(255,107,157,0.7)'; ctx.lineWidth=2;
+      ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    // Draw Peer's Frost Aura
+    if(p.frost>0){
+      const frostPulse=0.4+0.2*Math.sin(Date.now()*0.004);
+      ctx.beginPath(); ctx.arc(p.rx,p.ry,pr+18,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(122,162,255,${frostPulse})`; ctx.lineWidth=3;
+      ctx.setLineDash([8,6]); ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    // Draw Peer's Berserk Fire
+    if(p.berserk>0){
+      const firePulse=0.5+0.35*Math.sin(Date.now()*0.008);
+      ctx.beginPath(); ctx.arc(p.rx,p.ry,pr+5,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(255,80,30,${firePulse})`; ctx.lineWidth=3;
+      ctx.stroke();
+    }
   }
 
   // Bots
@@ -1092,9 +1133,25 @@ function draw(){
 
     // Spikes outline
     if(me.thorns>0){
-      ctx.beginPath(); ctx.arc(me.x,me.y,r+2,0,Math.PI*2);
-      ctx.strokeStyle='rgba(255,107,157,0.45)'; ctx.lineWidth=1.5;
-      ctx.setLineDash([3,4]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(me.x,me.y,r+3,0,Math.PI*2);
+      ctx.strokeStyle='rgba(255,107,157,0.7)'; ctx.lineWidth=2;
+      ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    // Frost Aura
+    if(me.frostAura){
+      const frostPulse=0.4+0.2*Math.sin(Date.now()*0.004);
+      ctx.beginPath(); ctx.arc(me.x,me.y,r+18,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(122,162,255,${frostPulse})`; ctx.lineWidth=3;
+      ctx.setLineDash([8,6]); ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    // Berserk Fire
+    if(me.berserkStacks>0 && (me.hp/(Math.min(MAX_HP_CAP,HP_BASE+me.maxHpBonus)))<0.40){
+      const firePulse=0.5+0.35*Math.sin(Date.now()*0.008);
+      ctx.beginPath(); ctx.arc(me.x,me.y,r+5,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(255,80,30,${firePulse})`; ctx.lineWidth=3;
+      ctx.stroke();
     }
   }
 

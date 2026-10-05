@@ -192,6 +192,10 @@ io.on('connection',(socket)=>{
     if(!socket.data.room) return;
     socket.to(socket.data.room).emit('skin',{...data,id:socket.id});
   });
+  socket.on('fx',(data)=>{
+    if(!socket.data.room) return;
+    socket.to(socket.data.room).emit('fx',{...data,from:socket.id});
+  });
 
   socket.on('hit',(data)=>{
     if(!data||!data.target) return;
