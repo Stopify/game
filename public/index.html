@@ -112,7 +112,6 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 #hud .top-row{display:flex;justify-content:space-between;align-items:center;}
 #hud .lvl{font-weight:900;color:var(--neon);text-shadow:0 0 8px rgba(0,255,136,0.4);letter-spacing:0.5px;}
 #hud .xp-val{font-size:11px;color:var(--sub);font-weight:700;}
-#buildPath{margin-top:6px;font-size:9.5px;color:var(--neon-cyan);font-weight:800;letter-spacing:0.35px;}
 
 .bar-wrap{margin-top:7px;}
 .bar-lbl{display:flex;justify-content:space-between;font-size:9.5px;color:var(--sub);font-weight:700;margin-bottom:3px;letter-spacing:0.3px;}
@@ -215,19 +214,12 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 .t2 .tier-badge{background:#0d2b33;color:var(--neon-cyan);}
 .t3 .tier-badge{background:#332b0d;color:var(--gold);}
 .t4 .tier-badge{background:#38121f;color:#ff8ca8;}
-.path-note{font-size:8.5px;color:#8b949e;margin-top:3px;font-weight:700;letter-spacing:0.2px;}
+.tree-preview{display:none;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.1);font-size:8.5px;color:var(--neon-cyan);line-height:1.35;font-weight:700;}
+.upcard:hover .tree-preview,.upcard:focus .tree-preview{display:block;}
 .t3 .tier-badge{background:#332900;color:var(--gold);}
 .stack-badge{font-size:8.5px;background:rgba(0,255,136,0.14);border:1px solid rgba(0,255,136,0.3);padding:1px 5px;border-radius:4px;color:var(--neon);font-weight:800;}
 .key-badge{font-size:9.5px;background:#1a2332;border:1px solid rgba(0,255,136,0.35);padding:1px 5px;border-radius:4px;color:var(--neon);font-weight:900;font-family:monospace;margin-right:6px;}
 
-#buildGuide{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(5,7,10,0.82);backdrop-filter:blur(6px);z-index:11;padding:16px;}
-#buildGuide .box{width:min(440px,100%);background:linear-gradient(180deg,#171d26 0%,#0e1218 100%);border:1px solid rgba(0,255,136,0.3);border-radius:16px;padding:24px;text-align:center;box-shadow:0 16px 50px rgba(0,0,0,0.85),0 0 25px rgba(0,255,136,0.1);}
-#buildGuide h2{font-size:19px;color:#fff;margin-bottom:7px;}
-#buildGuide p{font-size:12px;color:var(--sub);line-height:1.45;margin-bottom:14px;}
-#buildGuide .paths{display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left;}
-#buildGuide .path{background:#0b0e14;border:1px solid rgba(255,255,255,0.09);border-radius:9px;padding:9px;font-size:11px;font-weight:800;color:#fff;}
-#buildGuide .path span{display:block;margin-top:3px;color:var(--sub);font-size:9.5px;font-weight:600;line-height:1.25;}
-#buildGuide button{margin-top:15px;padding:10px 18px;border:0;border-radius:9px;background:linear-gradient(180deg,#00ff88 0%,#05d572 100%);color:#041a10;font-weight:900;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -264,7 +256,6 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
     <span class="lvl" id="lvlText">Lv 1</span>
     <span class="xp-val" id="xpText">0 XP</span>
   </div>
-  <div id="buildPath">BUILD: Choose your first upgrade</div>
   <div class="bar-wrap">
     <div class="bar-lbl"><span>ENERGY / XP</span><span id="xpPctText">0%</span></div>
     <div class="bar-track"><div class="bar-fill" id="xpfill"></div></div>
@@ -307,18 +298,6 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 <div id="upgradeOverlay"><div class="box">
   <div class="hdr">🎉 BUILD UPGRADE! CHOOSE ONE:</div>
   <div id="upgradeCards"></div>
-</div></div>
-
-<div id="buildGuide"><div class="box">
-  <h2>Choose Your Build</h2>
-  <p>Your first upgrade starts a path. Follow its connected upgrades to unlock a powerful final core.</p>
-  <div class="paths">
-    <div class="path">⚔️ Assault<span>Heavy lunge damage and finishing strikes.</span></div>
-    <div class="path">⚡ Mobility<span>Speed, longer dashes, and shockwaves.</span></div>
-    <div class="path">🛡️ Fortress<span>Health, shields, and staying power.</span></div>
-    <div class="path">🫧 Swarm<span>Fast XP growth and defense drones.</span></div>
-  </div>
-  <button id="buildGuideContinue">SHOW MY UPGRADES</button>
 </div></div>
 
 <div id="pauseOverlay"><div class="box">
@@ -490,7 +469,6 @@ function freshStats(){
     executioner:0,            // bonus dmg vs low HP
     frostAura:false,          // slows nearby foes
     upgradeCounts:{},
-    primaryPath:'',
   };
 }
 
@@ -527,7 +505,7 @@ const UPGRADE_POOL=[
   {tier:4,id:'swarm', path:'Swarm', requires:['minions'], minLevel:10, name:'Swarm Commander',desc:'Deploy the maximum four defense drones',icon:'👑', maxStack:1, apply:m=>{m.orbiterCount=4;m.orbiters=null;}},
 ];
 
-let pendingUpgrades=0, upgradeOpen=false, buildGuideShown=false;
+let pendingUpgrades=0, upgradeOpen=false;
 
 function pickUpgrades(count=3){
   const lv=me.level;
@@ -557,7 +535,6 @@ function selectUpgradeByIndex(index){
   const curRank=(me.upgradeCounts&&me.upgradeCounts[u.id])||0;
   u.apply(me);
   me.upgradeCounts[u.id]=curRank+1;
-  if(!me.primaryPath) me.primaryPath=u.path;
   pendingUpgrades--;
   document.getElementById('upgradeOverlay').style.display='none';
   upgradeOpen=false;
@@ -566,11 +543,6 @@ function selectUpgradeByIndex(index){
 }
 
 function showUpgradePicker(){
-  if(!buildGuideShown){
-    buildGuideShown=true;
-    document.getElementById('buildGuide').style.display='flex';
-    return;
-  }
   upgradeOpen=true;
   currentUpgradePicks=pickUpgrades(3);
   const wrap=document.getElementById('upgradeCards'); wrap.innerHTML='';
@@ -581,17 +553,12 @@ function showUpgradePicker(){
     const rankBadge=curRank>0?`<span class="stack-badge">Rank ${curRank+1}</span>`:'';
     d.innerHTML=`<div class="ic">${u.icon}</div><div class="txt">
       <div class="nm"><span><span class="key-badge">${i+1}</span>${u.name} ${rankBadge}</span><span class="tier-badge">T${TIER_LABEL[u.tier]}</span></div>
-      <div class="ds">${u.desc}</div><div class="path-note">${u.path} path${u.requires?' • requires '+u.requires.map(id=>UPGRADE_POOL.find(node=>node.id===id).name).join(' + '):''}</div></div>`;
+      <div class="ds">${u.desc}</div><div class="tree-preview">${u.path}: ${UPGRADE_POOL.filter(node=>node.path===u.path).map(node=>node.id===u.id?'▸ '+node.name:node.name).join(' → ')}</div></div>`;
     d.onclick=()=>selectUpgradeByIndex(i);
     wrap.appendChild(d);
   });
   document.getElementById('upgradeOverlay').style.display='flex';
 }
-
-document.getElementById('buildGuideContinue').onclick=()=>{
-  document.getElementById('buildGuide').style.display='none';
-  showUpgradePicker();
-};
 
 function checkUpgradeSteps(){
   while(me.level-me.lastUpgradeLevel>=me.upgradeStep){
@@ -1182,7 +1149,6 @@ function loop(t){
     document.getElementById('statXp').textContent=me.xpMult.toFixed(2)+'x';
     const aliveOrbs=me.orbiters?me.orbiters.filter(o=>o.hp>0&&now>=o.respawnAt).length:0;
     document.getElementById('statMinions').textContent=me.orbiterCount>0?`${aliveOrbs}/${me.orbiterCount}`:'0';
-    document.getElementById('buildPath').textContent=me.primaryPath?'BUILD: '+me.primaryPath:'BUILD: Choose your first upgrade';
 
     if(me.shockwaveLevel>0){
       const waveCd=Math.max(0, me.shockwaveCooldownUntil-now);
