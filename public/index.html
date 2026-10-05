@@ -106,7 +106,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
   backdrop-filter:blur(10px);
   border:1px solid rgba(0,255,136,0.22);
   border-radius:14px;padding:12px 16px;font-size:13px;display:none;
-  min-width:225px;max-width:275px;
+  min-width:240px;max-width:300px;
   box-shadow:0 8px 30px rgba(0,0,0,0.65), 0 0 15px rgba(0,255,136,0.06), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 #hud .top-row{display:flex;justify-content:space-between;align-items:center;}
@@ -119,9 +119,23 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 .bar-fill{height:100%;border-radius:4px;width:0%;transition:width 0.08s linear;}
 #xpfill{background:linear-gradient(90deg, #00ff88, #00e5ff);box-shadow:0 0 8px rgba(0,255,136,0.5);}
 #hpfill{background:linear-gradient(90deg, #ff3366, #ff8844);box-shadow:0 0 8px rgba(255,51,102,0.4);}
-#lungefill{background:linear-gradient(90deg, #00e5ff, #00ff88);box-shadow:0 0 8px rgba(0,229,255,0.4);}
+#dashfill{background:linear-gradient(90deg, #00e5ff, #00ff88);box-shadow:0 0 8px rgba(0,229,255,0.4);}
 #hpbar-track{height:8px;}
 
+/* Build tracker */
+#buildPanel{margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.08);}
+#buildHdr{display:flex;justify-content:space-between;font-size:9.5px;font-weight:800;letter-spacing:.8px;color:var(--neon);cursor:pointer;user-select:none;}
+#buildBody{max-height:210px;overflow-y:auto;}
+.brow{display:flex;align-items:center;gap:2px;margin-top:4px;}
+.blbl{width:52px;font-size:8.5px;font-weight:800;color:var(--sub);text-transform:uppercase;flex-shrink:0;}
+.arr{font-size:9px;color:#4a5568;}
+.chip{position:relative;width:19px;height:19px;border-radius:5px;font-size:10.5px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.1);background:#0b0e14;opacity:.3;cursor:help;}
+.chip.soon{opacity:.6;border-color:rgba(0,229,255,0.35);}
+.chip.avail{opacity:1;border-color:var(--neon-cyan);box-shadow:0 0 6px rgba(0,229,255,0.45);}
+.chip.owned{opacity:1;border-color:var(--neon);background:rgba(0,255,136,0.16);box-shadow:0 0 6px rgba(0,255,136,0.35);}
+.chip i{position:absolute;right:-3px;bottom:-5px;font-size:8px;font-style:normal;font-weight:900;background:#05140d;color:var(--neon);border-radius:4px;padding:0 2px;}
+#buildNext{margin-top:7px;font-size:9px;color:var(--sub);line-height:1.35;}
+#buildNext b{color:var(--neon-cyan);}
 /* Detailed stats grid */
 #statsGrid{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:10px;}
 .stat-item{display:flex;align-items:center;justify-content:space-between;color:var(--sub);font-weight:600;}
@@ -214,7 +228,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 .t2 .tier-badge{background:#0d2b33;color:var(--neon-cyan);}
 .t3 .tier-badge{background:#332b0d;color:var(--gold);}
 .t4 .tier-badge{background:#38121f;color:#ff8ca8;}
-.tree-preview{display:none;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.1);font-size:8.5px;color:var(--neon-cyan);line-height:1.35;font-weight:700;}
+.tree-preview{display:block;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.1);font-size:8.5px;color:var(--neon-cyan);line-height:1.35;font-weight:700;}
 .upcard:hover .tree-preview,.upcard:focus .tree-preview{display:block;}
 .t3 .tier-badge{background:#332900;color:var(--gold);}
 .stack-badge{font-size:8.5px;background:rgba(0,255,136,0.14);border:1px solid rgba(0,255,136,0.3);padding:1px 5px;border-radius:4px;color:var(--neon);font-weight:800;}
@@ -225,24 +239,24 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 <body>
 <div id="start">
   <div id="card">
-    <div class="brand">Audio-Style Arena</div>
+    <div class="brand">Multiplayer Arena</div>
     <h1>🟢 BLOB ARENA</h1>
-    <p>High-speed competitive momentum arena. Pick upgrades, hunt foes, and dominate the center zone.</p>
-    <input id="name" maxlength="14" placeholder="Blob Pilot Name">
+    <p>Eat pellets, level up, pick upgrades and fight other blobs. The center has bonus food but hurts you.</p>
+    <input id="name" maxlength="14" placeholder="Your name">
     <div id="lobbyRow">
       <input id="lobby" maxlength="6" placeholder="LOBBY">
       <button id="randomLobby">Random</button>
     </div>
     <div id="colors"></div>
     <div id="editorWrap">
-      <div class="lbl">CUSTOM BLOB SKIN MATRIX</div>
+      <div class="lbl">DRAW YOUR BLOB</div>
       <canvas id="editor" width="16" height="16"></canvas><br>
       <button id="clearSkin">Reset to Solid</button>
       <label id="photoUpload" for="photoSkin">Upload Blob Picture</label>
       <input id="photoSkin" type="file" accept="image/*">
       <div id="photoStatus">Optional: your picture will be cropped to fit your blob.</div>
     </div>
-    <button id="play">ENTER ARENA</button>
+    <button id="play">PLAY</button>
     <div id="status">Share your lobby code with friends to join the same match.</div>
   </div>
 </div>
@@ -257,30 +271,33 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
     <span class="xp-val" id="xpText">0 XP</span>
   </div>
   <div class="bar-wrap">
-    <div class="bar-lbl"><span>ENERGY / XP</span><span id="xpPctText">0%</span></div>
+    <div class="bar-lbl"><span>XP</span><span id="xpPctText">0%</span></div>
     <div class="bar-track"><div class="bar-fill" id="xpfill"></div></div>
   </div>
   <div class="bar-wrap">
-    <div class="bar-lbl"><span>HULL INTEGRITY</span><span id="hpText">100/100</span></div>
+    <div class="bar-lbl"><span>HP</span><span id="hpText">100/100</span></div>
     <div class="bar-track" id="hpbar-track"><div class="bar-fill" id="hpfill" style="width:100%"></div></div>
   </div>
   <div class="bar-wrap">
-    <div class="bar-lbl"><span>⚔️ LUNGE THRUSTER</span><span id="lungeTimerText">READY</span></div>
-    <div class="bar-track"><div class="bar-fill" id="lungefill" style="width:100%"></div></div>
+    <div class="bar-lbl"><span>⚔️ DASH THRUSTER</span><span id="dashTimerText">READY</span></div>
+    <div class="bar-track"><div class="bar-fill" id="dashfill" style="width:100%"></div></div>
   </div>
   <div id="shieldRow"></div>
   <div id="zoneWarn">☠️ DANGER ZONE — TAKING DAMAGE</div>
 
+  <div id="buildPanel"><div id="buildHdr"><span>BUILD</span><span id="buildToggle">▾</span></div><div id="buildBody"></div></div>
   <!-- Detailed Stats Display -->
   <div id="statsGrid">
     <div class="stat-item"><span>Speed:</span><span class="stat-val" id="statSpeed">1.0x</span></div>
-    <div class="stat-item"><span>Strike Dmg:</span><span class="stat-val" id="statDmg">17</span></div>
-    <div class="stat-item"><span>Lunge CD:</span><span class="stat-val" id="statCd">1.4s</span></div>
+    <div class="stat-item"><span>Damage:</span><span class="stat-val" id="statDmg">17</span></div>
+    <div class="stat-item"><span>Dash CD:</span><span class="stat-val" id="statCd">1.4s</span></div>
     <div class="stat-item"><span>Lifesteal:</span><span class="stat-val" id="statVamp">0%</span></div>
     <div class="stat-item"><span>Magnet:</span><span class="stat-val" id="statMag">0</span></div>
     <div class="stat-item"><span>XP Boost:</span><span class="stat-val" id="statXp">1.0x</span></div>
     <div class="stat-item"><span>Minions:</span><span class="stat-val" id="statMinions">0</span></div>
     <div class="stat-item"><span>Shockwave:</span><span class="stat-val" id="statWave">-</span></div>
+    <div class="stat-item"><span>Spikes:</span><span class="stat-val" id="statSpikes">-</span></div>
+    <div class="stat-item"><span>Regen:</span><span class="stat-val" id="statRegen">3.0/s</span></div>
   </div>
 </div>
 
@@ -289,21 +306,21 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 <div id="board"><h3>LEADERBOARD</h3><div id="rows"></div></div>
 
 <div id="respawn"><div class="box">
-  <div id="deathMsg" style="font-size:18px;font-weight:900;color:var(--accent2);margin-bottom:8px;">HULL BREACHED!</div>
+  <div id="deathMsg" style="font-size:18px;font-weight:900;color:var(--accent2);margin-bottom:8px;">YOU DIED!</div>
   <div style="color:var(--sub);font-size:13px;margin-bottom:6px;">Final Level: <b id="finalLvl" style="color:#fff"></b></div>
-  <div style="color:var(--neon);font-size:13px;margin-bottom:8px;font-weight:700;">🌟 Salvaged XP: <b id="retainedXpText">0</b> (Respawn at Lv <span id="retainedLvlText">1</span>)</div>
-  <button id="respawnBtn">REDEPLOY WITH SALVAGED XP</button>
+  <div style="color:var(--neon);font-size:13px;margin-bottom:8px;font-weight:700;">🌟 Kept XP: <b id="retainedXpText">0</b> (Respawn at Lv <span id="retainedLvlText">1</span>)</div>
+  <button id="respawnBtn">RESPAWN</button>
 </div></div>
 
 <div id="upgradeOverlay"><div class="box">
-  <div class="hdr">🎉 BUILD UPGRADE! CHOOSE ONE:</div>
+  <div class="hdr">🎉 LEVEL UP! PICK AN UPGRADE:</div>
   <div id="upgradeCards"></div>
 </div></div>
 
 <div id="pauseOverlay"><div class="box">
-  <div style="font-size:18px;margin-bottom:6px;font-weight:800;color:#fff;">⏸ SYSTEM PAUSED</div>
-  <div style="color:var(--sub);font-size:12px;line-height:1.5;">Steering is locked.<br><b style="color:#ff3366">⚠️ Active Arena:</b> Foes and danger zone can still damage you!</div>
-  <button id="resumeBtn">RESUME COMBAT</button>
+  <div style="font-size:18px;margin-bottom:6px;font-weight:800;color:#fff;">⏸ PAUSED</div>
+  <div style="color:var(--sub);font-size:12px;line-height:1.5;">Foes and the danger zone can still hurt you while paused.</div>
+  <button id="resumeBtn">RESUME</button>
 </div></div>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -379,7 +396,7 @@ document.getElementById('randomLobby').onclick=()=>{lobbyInput.value=randCode();
 
 // ── Constants & Caps ───────────────────────────────────────────────────────
 const WORLD=3600, OUTER_FOOD=300, CENTER_FOOD=70, CENTER_RADIUS=520;
-const BASE_SPEED=2.3, LUNGE_SPEED=10.5, LUNGE_DURATION=220, LUNGE_ENDLAG=280, LUNGE_COOLDOWN=1400, KNOCK=44;
+const BASE_SPEED=2.3, DASH_SPEED=10.5, DASH_DURATION=220, DASH_ENDLAG=280, DASH_COOLDOWN=1400, KNOCK=44;
 const HP_BASE=100, REGEN_DELAY=5500, REGEN_RATE=3;
 const VEL_FRICTION=0.91;   // ice-slide friction per frame
 const CENTER_DOT=7;         // hp/sec inside danger zone
@@ -450,9 +467,9 @@ function radiusFromLevel(lv,bulk){return (16+lv*2.4)*(1+(bulk||0));}
 function freshStats(){
   return {
     speedMult:1, magnet:0, xpMult:1, bulk:0,
-    lungeDmgMult:1, lungeCdMult:1, lungeDurMult:1,
+    dashDmgMult:1, dashCdMult:1, dashDurMult:1,
     regenMult:1, maxHpBonus:0,
-    vampiric:0,
+    lifesteal:0,
     berserkStacks:0,
     shockwaveLevel:0,
     shockwaveCooldownUntil:0, // internal 4s cooldown
@@ -461,61 +478,109 @@ function freshStats(){
     shieldCharges:0,
     shieldCooldownMs:32000,
     shieldRechargeAt:0,
-    orbiterCount:0,           // up to 4 minions
-    orbiters:null,
-    thorns:0,                 // reflected spike damage
+    minionCount:0,           // up to 4 minions
+    minionList:null,
+    spikes:0,                 // reflected spike damage
     adrenalineUntil:0,
     adrenalineLevel:0,
     executioner:0,            // bonus dmg vs low HP
     frostAura:false,          // slows nearby foes
     upgradeCounts:{},
+    dmgReduction:0, killHeal:0, pelletHeal:0, killRush:false, spikeHeal:0,
+    shieldBlast:false, spikeDash:false, knockMult:1, knockResist:1,
+    minionDmgBonus:0, minionHpBonus:0, minionBoost:1, orbitBase:0,
   };
 }
 
 // ── Upgrade build tree ───────────────────────────────────────────────────────
 const UPGRADE_POOL=[
-  {tier:1,id:'power', path:'Assault', name:'Plasma Strike',desc:'+35% lunge strike damage',icon:'💥', maxStack:3, apply:m=>m.lungeDmgMult+=0.35},
-  {tier:2,id:'execute', path:'Assault', requires:['power'], minLevel:3, name:'Executioner',desc:'+45% strike damage vs foes under 50% HP',icon:'🪓', maxStack:2, apply:m=>m.executioner=(m.executioner||0)+0.45},
-  {tier:3,id:'berserk', path:'Assault', requires:['execute'], minLevel:6, name:'Berserk Protocol',desc:'Below 40% HP: +30% speed & damage',icon:'😡', maxStack:2, apply:m=>m.berserkStacks=(m.berserkStacks||0)+1},
-  {tier:4,id:'reaper', path:'Assault', requires:['berserk'], minLevel:10, name:'Reaper Core',desc:'+45% lunge damage and +35% execute damage',icon:'☠️', maxStack:1, apply:m=>{m.lungeDmgMult+=0.45;m.executioner+=0.35;}},
-
-  {tier:1,id:'swift', path:'Mobility', name:'Swift Thrusters',desc:'+15% movement speed',icon:'⚡', maxStack:3, apply:m=>m.speedMult*=1.15},
-  {tier:2,id:'afterburn', path:'Mobility', requires:['swift'], minLevel:3, name:'Afterburner',desc:'Launch distance (diminishing)',icon:'🚀', maxStack:4, apply:m=>{
+  // DAMAGE
+  {tier:1,id:'power',path:'Damage',name:'Damage Up',desc:'+35% dash damage',icon:'💥',maxStack:3,apply:m=>m.dashDmgMult+=0.35},
+  {tier:2,id:'execute',path:'Damage',requires:['power'],minLevel:3,name:'Execute',desc:'+45% damage vs foes under 50% HP',icon:'🪓',maxStack:2,apply:m=>m.executioner+=0.45},
+  {tier:3,id:'berserk',path:'Damage',requires:['execute'],minLevel:6,name:'Berserk',desc:'Below 40% HP: +30% speed & damage',icon:'😡',maxStack:2,apply:m=>m.berserkStacks+=1},
+  {tier:4,id:'reaper',path:'Damage',requires:['berserk'],minLevel:10,name:'Reaper',desc:'+45% dash damage and +35% execute damage',icon:'☠️',maxStack:1,apply:m=>{m.dashDmgMult+=0.45;m.executioner+=0.35;}},
+  // SPEED
+  {tier:1,id:'swift',path:'Speed',name:'Speed Up',desc:'+15% movement speed',icon:'⚡',maxStack:3,apply:m=>m.speedMult*=1.15},
+  {tier:2,id:'afterburn',path:'Speed',requires:['swift'],minLevel:3,name:'Dash Distance',desc:'Dash goes farther (diminishing)',icon:'🚀',maxStack:4,apply:m=>{
       const cur=me.upgradeCounts['afterburn']||0;
-      const b=cur===0?0.35:cur===1?0.26:cur===2?0.12:0.06;
-      m.lungeDurMult+=b;
-    }},
-  {tier:3,id:'fury', path:'Mobility', requires:['afterburn'], minLevel:6, name:'Overclock',desc:'-22% lunge cooldown',icon:'🔥', maxStack:3, apply:m=>m.lungeCdMult=Math.max(0.25,m.lungeCdMult*0.78)},
-  {tier:4,id:'shockwave', path:'Mobility', requires:['fury'], minLevel:10, name:'EMP Shockwave',desc:'Lunge emits tactical knockback (4s cooldown)',icon:'💫', maxStack:1, apply:m=>m.shockwaveLevel=1},
-
-  {tier:1,id:'bulk', path:'Fortress', name:'Bulk Armor',desc:'+10% size and mass',icon:'💪', maxStack:3, apply:m=>m.bulk+=0.10},
-  {tier:2,id:'vitality', path:'Fortress', requires:['bulk'], minLevel:3, name:'Hull Plating',desc:'+40 max HP (capped at 300)',icon:'❤️', maxStack:3, apply:m=>{m.maxHpBonus+=40;m.hp=Math.min(m.hp+40,Math.min(MAX_HP_CAP,HP_BASE+m.maxHpBonus));}},
-  {tier:3,id:'shield', path:'Fortress', requires:['vitality'], minLevel:6, name:'Energy Barrier',desc:'+1 shield charge (blocks 40 damage, max 3)',icon:'🛡️',
-    maxStack:3, apply:m=>{
-      m.shieldMaxCharges=Math.min(3,(m.shieldMaxCharges||0)+1);
-      m.shieldCharges=m.shieldMaxCharges;
-      m.shieldCooldownMs=Math.max(16000, 32000 - (m.shieldMaxCharges-1)*6000);
-      m.shieldRechargeAt=0;
-    }},
-  {tier:4,id:'fortress', path:'Fortress', requires:['shield'], minLevel:10, name:'Fortress Core',desc:'+80 max HP and +50% regeneration',icon:'🏰', maxStack:1, apply:m=>{m.maxHpBonus+=80;m.hp=Math.min(m.hp+80,Math.min(MAX_HP_CAP,HP_BASE+m.maxHpBonus));m.regenMult+=0.5;}},
-
-  {tier:1,id:'magnet', path:'Swarm', name:'Magnetism',desc:'+60 pellet pull range',icon:'🧲', maxStack:3, apply:m=>m.magnet+=60},
-  {tier:2,id:'feast', path:'Swarm', requires:['magnet'], minLevel:3, name:'Feast Capacitor',desc:'+30% XP from pellets and kills',icon:'🍒', maxStack:3, apply:m=>m.xpMult+=0.30},
-  {tier:3,id:'minions', path:'Swarm', requires:['feast'], minLevel:6, name:'Defense Drone',desc:'+1 tough 75 HP drone (up to 4)',icon:'🫧', maxStack:4, apply:m=>{m.orbiterCount=Math.min(4,(m.orbiterCount||0)+1);m.orbiters=null;}},
-  {tier:4,id:'swarm', path:'Swarm', requires:['minions'], minLevel:10, name:'Swarm Commander',desc:'Deploy the maximum four defense drones',icon:'👑', maxStack:1, apply:m=>{m.orbiterCount=4;m.orbiters=null;}},
+      m.dashDurMult+=cur===0?0.35:cur===1?0.26:cur===2?0.12:0.06;}},
+  {tier:2,id:'adrenaline',path:'Speed',requires:['swift'],minLevel:3,name:'Adrenaline',desc:'+30% speed for 2s after taking a hit',icon:'💉',maxStack:1,apply:m=>m.adrenalineLevel=1},
+  {tier:3,id:'fury',path:'Speed',requiresAny:['afterburn','adrenaline'],minLevel:6,name:'Dash Cooldown',desc:'-22% dash cooldown',icon:'🔥',maxStack:3,apply:m=>m.dashCdMult=Math.max(0.25,m.dashCdMult*0.78)},
+  {tier:4,id:'shockwave',path:'Speed',requires:['fury'],minLevel:10,name:'Shockwave',desc:'Dash sends out a damaging knockback blast (4s cooldown)',icon:'💫',maxStack:1,apply:m=>m.shockwaveLevel=1},
+  // TANK
+  {tier:1,id:'bulk',path:'Tank',name:'Bigger Body',desc:'+10% size and weight',icon:'💪',maxStack:3,apply:m=>m.bulk+=0.10},
+  {tier:2,id:'vitality',path:'Tank',requires:['bulk'],minLevel:3,name:'Max HP',desc:'+40 max HP (cap 300)',icon:'❤️',maxStack:3,apply:m=>{m.maxHpBonus+=40;m.hp=Math.min(m.hp+40,Math.min(MAX_HP_CAP,HP_BASE+m.maxHpBonus));}},
+  {tier:2,id:'armor',path:'Tank',requires:['bulk'],minLevel:3,name:'Armor',desc:'Take 10% less damage',icon:'🔰',maxStack:2,apply:m=>m.dmgReduction=Math.min(0.5,m.dmgReduction+0.10)},
+  {tier:3,id:'shield',path:'Tank',requires:['vitality'],minLevel:6,name:'Shield',desc:'+1 shield charge (blocks 40 damage, max 3)',icon:'🛡️',maxStack:3,apply:m=>{
+      m.shieldMaxCharges=Math.min(3,m.shieldMaxCharges+1);m.shieldCharges=m.shieldMaxCharges;
+      m.shieldCooldownMs=Math.max(16000,32000-(m.shieldMaxCharges-1)*6000);m.shieldRechargeAt=0;}},
+  {tier:4,id:'fortress',path:'Tank',requires:['shield'],minLevel:10,name:'Fortress',desc:'+80 max HP and +50% regen',icon:'🏰',maxStack:1,apply:m=>{m.maxHpBonus+=80;m.hp=Math.min(m.hp+80,Math.min(MAX_HP_CAP,HP_BASE+m.maxHpBonus));m.regenMult+=0.5;}},
+  // GROWTH
+  {tier:1,id:'magnet',path:'Growth',name:'Magnet',desc:'+60 pellet pull range',icon:'🧲',maxStack:3,apply:m=>m.magnet+=60},
+  {tier:2,id:'feast',path:'Growth',requires:['magnet'],minLevel:3,name:'XP Boost',desc:'+30% XP from pellets and kills',icon:'🍒',maxStack:3,apply:m=>m.xpMult+=0.30},
+  {tier:3,id:'snack',path:'Growth',requires:['feast'],minLevel:6,name:'Pellet Healing',desc:'Heal 2 HP for every pellet you eat',icon:'🍏',maxStack:3,apply:m=>m.pelletHeal+=2},
+  {tier:4,id:'glutton',path:'Growth',requires:['snack'],minLevel:10,name:'Glutton',desc:'+50% XP and +100 magnet range',icon:'🍽️',maxStack:1,apply:m=>{m.xpMult+=0.5;m.magnet+=100;}},
+  // MINIONS
+  {tier:2,id:'minions',path:'Minions',minLevel:3,name:'Minion',desc:'+1 minion (30 HP, small damage, max 3)',icon:'🫧',maxStack:3,apply:m=>{m.minionCount=Math.min(4,m.minionCount+1);m.minionList=null;}},
+  {tier:3,id:'minionDmg',path:'Minions',requires:['minions'],minLevel:6,name:'Minion Damage',desc:'Minions deal +4 damage',icon:'🗡️',maxStack:2,apply:m=>m.minionDmgBonus+=4},
+  {tier:3,id:'minionHp',path:'Minions',requires:['minions'],minLevel:6,name:'Tough Minions',desc:'Minions get +20 HP and respawn 4s faster',icon:'🧱',maxStack:2,apply:m=>{m.minionHpBonus+=20;m.minionList=null;}},
+  {tier:4,id:'swarm',path:'Minions',requires:['minionDmg'],minLevel:10,name:'Minion Army',desc:'+1 extra minion (4 total) and minions deal 50% more',icon:'👑',maxStack:1,apply:m=>{m.minionCount=Math.min(4,m.minionCount+1);m.minionBoost=1.5;m.minionList=null;}},
+  // VAMPIRE
+  {tier:1,id:'lifesteal',path:'Vampire',name:'Lifesteal',desc:'Heal 8% of dash damage dealt',icon:'🩸',maxStack:3,apply:m=>m.lifesteal+=0.08},
+  {tier:2,id:'regen',path:'Vampire',requires:['lifesteal'],minLevel:3,name:'Regen',desc:'+60% HP regeneration',icon:'💚',maxStack:2,apply:m=>m.regenMult+=0.6},
+  {tier:3,id:'bloodthirst',path:'Vampire',requires:['regen'],minLevel:6,name:'Kill Heal',desc:'Heal 20% max HP on every kill',icon:'🍷',maxStack:2,apply:m=>m.killHeal+=0.20},
+  {tier:4,id:'vampire',path:'Vampire',requires:['bloodthirst'],minLevel:10,name:'Vampire',desc:'+15% lifesteal and +20% kill heal',icon:'🧛',maxStack:1,apply:m=>{m.lifesteal+=0.15;m.killHeal+=0.20;}},
+  // SPIKES
+  {tier:1,id:'spikes',path:'Spikes',name:'Spikes',desc:'Grow spikes: attackers take 6 damage back',icon:'🌵',maxStack:3,apply:m=>m.spikes+=6},
+  {tier:2,id:'sharp',path:'Spikes',requires:['spikes'],minLevel:3,name:'Sharp Spikes',desc:'+8 spike damage',icon:'📌',maxStack:2,apply:m=>m.spikes+=8},
+  {tier:3,id:'frost',path:'Spikes',requires:['sharp'],minLevel:6,name:'Frost Aura',desc:'Enemies near you move 30-40% slower',icon:'❄️',maxStack:1,apply:m=>m.frostAura=true},
+  {tier:4,id:'spikeArmor',path:'Spikes',requires:['frost'],minLevel:10,name:'Spike Armor',desc:'+12 spike damage and take 15% less damage',icon:'🦔',maxStack:1,apply:m=>{m.spikes+=12;m.dmgReduction=Math.min(0.5,m.dmgReduction+0.15);}},
+  // COMBOS (need upgrades from two different paths)
+  {tier:3,id:'leech',path:'Combo',requires:['spikes','lifesteal'],minLevel:5,name:'Leech Spikes',desc:'Spike damage heals you',icon:'🦇',maxStack:1,apply:m=>m.spikeHeal=1},
+  {tier:3,id:'shieldBlast',path:'Combo',requires:['shield','power'],minLevel:5,name:'Shield Blast',desc:'When your shield blocks a hit, attacker takes 20 damage and gets knocked back',icon:'💢',maxStack:1,apply:m=>m.shieldBlast=true},
+  {tier:3,id:'juggernaut',path:'Combo',requires:['bulk','power'],minLevel:5,name:'Juggernaut',desc:'+50% dash knockback, take 40% less knockback',icon:'🦏',maxStack:1,apply:m=>{m.knockMult=1.5;m.knockResist=0.6;}},
+  {tier:3,id:'spikeDash',path:'Combo',requires:['spikes','swift'],minLevel:5,name:'Spiked Dash',desc:'Dash hits deal bonus damage equal to 2x your spike damage',icon:'🌪️',maxStack:1,apply:m=>m.spikeDash=true},
+  {tier:3,id:'killRush',path:'Combo',requires:['execute','swift'],minLevel:5,name:'Kill Rush',desc:'Kills reset your dash and give +30% speed for 3s',icon:'🏁',maxStack:1,apply:m=>m.killRush=true},
 ];
+
+// ── Availability helpers + build tracker UI ──
+const BUILD_PATHS=['Damage','Speed','Tank','Growth','Minions','Vampire','Spikes','Combo'];
+let lastBuildSig='';
+function reqMet(u){
+  const c=id=>(me.upgradeCounts[id]||0)>0;
+  return (!u.requires||u.requires.every(c))&&(!u.requiresAny||u.requiresAny.some(c));
+}
+function isAvailable(u){
+  return (!u.minLevel||me.level>=u.minLevel)&&reqMet(u)&&(!u.maxStack||(me.upgradeCounts[u.id]||0)<u.maxStack);
+}
+function upName(id){const x=UPGRADE_POOL.find(n=>n.id===id);return x?x.name:id;}
+function renderBuild(){
+  const body=document.getElementById('buildBody'); if(!body||!me) return;
+  let html='';
+  BUILD_PATHS.forEach(path=>{
+    const nodes=UPGRADE_POOL.filter(u=>u.path===path);
+    html+=`<div class="brow"><span class="blbl">${path}</span>`;
+    nodes.forEach((u,i)=>{
+      const cnt=me.upgradeCounts[u.id]||0;
+      let st=''; if(cnt>0) st='owned'; else if(reqMet(u)) st=(!u.minLevel||me.level>=u.minLevel)?'avail':'soon';
+      let tip=`${u.name}${u.maxStack>1?' ('+cnt+'/'+u.maxStack+')':''} - ${u.desc}`;
+      if(cnt===0&&!reqMet(u)) tip+=' | Needs: '+(u.requires?u.requires.map(upName).join(' + '):u.requiresAny.map(upName).join(' or '));
+      if(u.minLevel&&me.level<u.minLevel) tip+=' | Level '+u.minLevel;
+      html+=`${i&&path!=='Combo'?'<span class="arr">›</span>':''}<span class="chip ${st}" title="${tip}">${u.icon}${cnt>1?'<i>'+cnt+'</i>':''}</span>`;
+    });
+    html+='</div>';
+  });
+  const nxt=UPGRADE_POOL.filter(isAvailable).map(u=>u.name);
+  html+=`<div id="buildNext"><b>Can pick:</b> ${nxt.slice(0,6).join(', ')}${nxt.length>6?' +'+(nxt.length-6)+' more':''}</div>`;
+  body.innerHTML=html;
+}
 
 let pendingUpgrades=0, upgradeOpen=false;
 
 function pickUpgrades(count=3){
   const lv=me.level;
-  const pool=UPGRADE_POOL.filter(u=>{
-    if(u.minLevel && lv<u.minLevel) return false;
-    if(u.requires&&!u.requires.every(id=>(me.upgradeCounts[id]||0)>0)) return false;
-    if(u.maxStack && (me.upgradeCounts[u.id]||0)>=u.maxStack) return false;
-    return true;
-  });
-  function w(u){ return u.tier===1 ? 1.6 : 1; }
+  const pool=UPGRADE_POOL.filter(isAvailable);
+  function w(u){ return u.tier===1 ? 1.6 : (u.path==='Combo' ? 1.5 : 1); }
   const weighted=pool.map(u=>({u,w:w(u)}));
   const picks=[];
   while(picks.length<count && weighted.length>0){
@@ -552,8 +617,8 @@ function showUpgradePicker(){
     const curRank=(me.upgradeCounts&&me.upgradeCounts[u.id])||0;
     const rankBadge=curRank>0?`<span class="stack-badge">Rank ${curRank+1}</span>`:'';
     d.innerHTML=`<div class="ic">${u.icon}</div><div class="txt">
-      <div class="nm"><span><span class="key-badge">${i+1}</span>${u.name} ${rankBadge}</span><span class="tier-badge">T${TIER_LABEL[u.tier]}</span></div>
-      <div class="ds">${u.desc}</div><div class="tree-preview">${u.path}: ${UPGRADE_POOL.filter(node=>node.path===u.path).map(node=>node.id===u.id?'▸ '+node.name:node.name).join(' → ')}</div></div>`;
+      <div class="nm"><span><span class="key-badge">${i+1}</span>${u.name} ${rankBadge}</span><span class="tier-badge">${u.path==='Combo'?'COMBO':'T'+TIER_LABEL[u.tier]}</span></div>
+      <div class="ds">${u.desc}</div><div class="tree-preview">${u.path}${(()=>{const nx=UPGRADE_POOL.filter(n=>(n.requires||[]).includes(u.id)||(n.requiresAny||[]).includes(u.id)).map(n=>n.name);return nx.length?' → unlocks: '+nx.join(', '):'';})()}</div></div>`;
     d.onclick=()=>selectUpgradeByIndex(i);
     wrap.appendChild(d);
   });
@@ -573,7 +638,7 @@ function checkUpgradeSteps(){
 let killTimer=null;
 function showKillBanner(victimName, xpAwarded){
   const el=document.getElementById('killBanner');
-  el.textContent=`☠️ TERMINATED ${victimName.toUpperCase()}! +${xpAwarded} XP`;
+  el.textContent=`☠️ KILLED ${victimName.toUpperCase()}! +${xpAwarded} XP`;
   el.style.display='block';
   if(killTimer) clearTimeout(killTimer);
   killTimer=setTimeout(()=>{ el.style.display='none'; }, 2800);
@@ -594,12 +659,12 @@ document.getElementById('play').onclick=()=>{
     document.getElementById('photoStatus').textContent='Your picture is still being prepared.';
     return;
   }
-  const nm=(document.getElementById('name').value||'Pilot').trim().slice(0,14);
+  const nm=(document.getElementById('name').value||'Player').trim().slice(0,14);
   const code=(lobbyInput.value||'ABCD').trim().toUpperCase().slice(0,6);
   const sp=randSpawn();
   me={x:sp.x,y:sp.y,xp:0,level:1,lastUpgradeLevel:0,upgradeStep:1,
       hp:HP_BASE,lastDamage:0,
-      lungeCooldownUntil:0,lungeUntil:0,lungeEndlagUntil:0,lungeDX:0,lungeDY:0,
+      dashCooldownUntil:0,dashUntil:0,dashEndlagUntil:0,dashDX:0,dashDY:0,
       kx:0,ky:0,
       hitSet:new Set(),
       name:nm,color:chosenColor,...freshStats()};
@@ -618,7 +683,7 @@ document.getElementById('play').onclick=()=>{
 
 function updateLobbyTag(code){
   const n=Object.keys(peers).length;
-  document.getElementById('lobbyTagText').textContent=code+' ('+(n===0?'live — waiting for peers':n+' other pilot'+(n>1?'s':'')+' online')+')';
+  document.getElementById('lobbyTagText').textContent=code+' ('+(n===0?'live — waiting for players':n+' other player'+(n>1?'s':'')+' online')+')';
 }
 
 // ── Networking ────────────────────────────────────────────────────────────
@@ -651,7 +716,7 @@ function setupNet(code){
       vky:prev?prev.vky||0:0,
       shield:data.shield||0,
       minions:data.minions||0,
-      thorns:data.thorns||0,
+      spikes:data.spikes||0,
       frost:data.frost||0,
       berserk:data.berserk||0
     };
@@ -676,8 +741,8 @@ function setupNet(code){
     if(!alive)return;
 
     // Minion Body-Blocking
-    if(me.orbiterCount>0 && me.orbiters){
-      const aliveMinions=me.orbiters.filter(o=>o.hp>0 && performance.now()>=o.respawnAt);
+    if(me.minionCount>0 && me.minionList){
+      const aliveMinions=me.minionList.filter(o=>o.hp>0 && performance.now()>=o.respawnAt);
       if(aliveMinions.length>0){
         let hitAngle=Math.atan2(-(data.ky||0), -(data.kx||0));
         let bestMinion=null, bestDiff=Infinity;
@@ -686,19 +751,20 @@ function setupNet(code){
           if(diff>Math.PI) diff=2*Math.PI-diff;
           if(diff<bestDiff){ bestDiff=diff; bestMinion=o; }
         });
-        if(bestMinion && (bestDiff<1.4 || aliveMinions.length>=3)){
-          bestMinion.hp-=data.dmg;
+        if(bestMinion && bestDiff<1.0){
+          const soaked=Math.min(bestMinion.hp,data.dmg);
+          bestMinion.hp-=soaked; data.dmg-=soaked;
           spawnHitSparks(bestMinion.x, bestMinion.y, -(data.kx||0), -(data.ky||0), '#ff3366');
           spawnDamageText(bestMinion.x, bestMinion.y-10, Math.round(data.dmg), false);
           const mHitFx={type:'minionHit',x:bestMinion.x,y:bestMinion.y,r:14,alpha:1};
           visualFx.push(mHitFx); net&&net.sendFx(mHitFx);
           if(bestMinion.hp<=0){
             bestMinion.hp=0;
-            bestMinion.respawnAt=performance.now()+14000;
+            bestMinion.respawnAt=performance.now()+Math.max(8000,20000-me.minionHpBonus*200);
             const mPopFx={type:'minionPop',x:bestMinion.x,y:bestMinion.y,color:me.color};
             visualFx.push(mPopFx); net&&net.sendFx(mPopFx);
           }
-          return;
+          if(data.dmg<=0) return;
         }
       }
     }
@@ -711,26 +777,29 @@ function setupNet(code){
       visualFx.push(shBreakFx); net&&net.sendFx(shBreakFx);
       const absorbed=Math.min(40, data.dmg);
       data.dmg-=absorbed;
+      if(me.shieldBlast && data.from) net.sendHit({dmg:20,byName:me.name+' (shield blast)',kx:-(data.kx||0)*1.2,ky:-(data.ky||0)*1.2},data.from);
       if(data.dmg<=0) return;
     }
 
     // Spikes reflect damage to attacker
-    if(me.thorns>0 && data.from){
-      net.sendHit({dmg:me.thorns, byName:me.name+' (spikes)', kx:-(data.kx||0)*0.5, ky:-(data.ky||0)*0.5}, data.from);
+    if(me.spikes>0 && data.from){
+      net.sendHit({dmg:me.spikes, byName:me.name+' (spike)', kx:-(data.kx||0)*0.5, ky:-(data.ky||0)*0.5}, data.from);
+      if(me.spikeHeal) me.hp=Math.min(Math.min(MAX_HP_CAP,HP_BASE+me.maxHpBonus),me.hp+me.spikes*me.spikeHeal);
     }
 
     if(me.adrenalineLevel>0){
       me.adrenalineUntil=performance.now()+2000;
     }
 
+    data.dmg*=1-(me.dmgReduction||0);
     // Spawn damage number on local player
     spawnDamageText(me.x, me.y-radiusFromLevel(me.level,me.bulk)-10, Math.round(data.dmg), false);
     spawnHitSparks(me.x, me.y, -(data.kx||0), -(data.ky||0), '#ff3366');
 
     me.hp=Math.max(0,me.hp-data.dmg);
     me.lastDamage=performance.now();
-    me.kx+=(data.kx||0)*0.8;
-    me.ky+=(data.ky||0)*0.8;
+    me.kx+=(data.kx||0)*0.8*me.knockResist;
+    me.ky+=(data.ky||0)*0.8*me.knockResist;
 
     if(me.hp<=0){
       alive=false;
@@ -739,7 +808,7 @@ function setupNet(code){
       document.getElementById('finalLvl').textContent=me.level;
       document.getElementById('retainedXpText').textContent=retainedXp;
       document.getElementById('retainedLvlText').textContent=retainedLvl;
-      document.getElementById('deathMsg').textContent=(data.byName||'Someone')+' vaporized you!';
+      document.getElementById('deathMsg').textContent=(data.byName||'Someone')+' killed you!';
       document.getElementById('respawn').style.display='flex';
 
       net.sendKilled({victimXp:me.xp, victimName:me.name, victimLevel:me.level}, data.from);
@@ -765,6 +834,9 @@ function setupNet(code){
     const finalGain=Math.round(bounty*(me.xpMult||1));
     me.xp+=finalGain;
     me.level=levelFromXp(me.xp);
+    const hpCap=Math.min(MAX_HP_CAP,HP_BASE+me.maxHpBonus);
+    if(me.killHeal) me.hp=Math.min(hpCap,me.hp+hpCap*me.killHeal);
+    if(me.killRush){ me.dashCooldownUntil=0; me.adrenalineUntil=performance.now()+3000; }
     showKillBanner(data.victimName||'an enemy',finalGain);
     checkUpgradeSteps();
   });
@@ -775,20 +847,20 @@ function setupNet(code){
 // ── Input ─────────────────────────────────────────────────────────────────
 function ptrToWorld(){ return {dx:pointer.x-canvas.width/2, dy:pointer.y-canvas.height/2}; }
 canvas.addEventListener('pointermove',e=>{pointer.x=e.clientX;pointer.y=e.clientY;});
-canvas.addEventListener('pointerdown',e=>{ pointer.x=e.clientX;pointer.y=e.clientY; tryLunge(); });
+canvas.addEventListener('pointerdown',e=>{ pointer.x=e.clientX;pointer.y=e.clientY; tryDash(); });
 
-function tryLunge(){
+function tryDash(){
   if(!alive||!me||manualPaused)return;
   const now=performance.now();
-  if(now<me.lungeCooldownUntil)return;
+  if(now<me.dashCooldownUntil)return;
   const {dx,dy}=ptrToWorld(); const d=Math.hypot(dx,dy)||1;
-  me.lungeDX=dx/d; me.lungeDY=dy/d;
-  const dur=LUNGE_DURATION*(me.lungeDurMult||1);
-  me.lungeUntil=now+dur;
-  me.lungeEndlagUntil=now+dur+LUNGE_ENDLAG;
-  me.lungeCooldownUntil=now+LUNGE_COOLDOWN*me.lungeCdMult;
-  const launchSpeed=14*(1+(me.lungeDurMult-1)*0.35);
-  me.kx=me.lungeDX*launchSpeed; me.ky=me.lungeDY*launchSpeed;
+  me.dashDX=dx/d; me.dashDY=dy/d;
+  const dur=DASH_DURATION*(me.dashDurMult||1);
+  me.dashUntil=now+dur;
+  me.dashEndlagUntil=now+dur+DASH_ENDLAG;
+  me.dashCooldownUntil=now+DASH_COOLDOWN*me.dashCdMult;
+  const launchSpeed=14*(1+(me.dashDurMult-1)*0.35);
+  me.kx=me.dashDX*launchSpeed; me.ky=me.dashDY*launchSpeed;
   me.hitSet=new Set();
 
   // Balanced Shockwave with 4s internal CD
@@ -796,7 +868,7 @@ function tryLunge(){
     me.shockwaveCooldownUntil=now+4000;
     const r=radiusFromLevel(me.level,me.bulk);
     const blastRadius=r+85+me.shockwaveLevel*35;
-    const waveDmg=(7+me.level*0.75)*me.shockwaveLevel*me.lungeDmgMult;
+    const waveDmg=(7+me.level*0.75)*me.shockwaveLevel*me.dashDmgMult;
     const waveKnock=65+me.shockwaveLevel*20;
 
     const swFx={type:'shockwave',x:me.x,y:me.y,r:r,maxR:blastRadius,alpha:1,color:'#00ff88'};
@@ -839,7 +911,7 @@ document.getElementById('respawnBtn').onclick=()=>{
   me.level=retainedLvl;
   me.lastUpgradeLevel=0;
   me.upgradeStep=1;
-  me.lungeCooldownUntil=0; me.lungeUntil=0; me.lungeEndlagUntil=0; me.lastDamage=0;
+  me.dashCooldownUntil=0; me.dashUntil=0; me.dashEndlagUntil=0; me.lastDamage=0;
   me.kx=0; me.ky=0;
   Object.assign(me,freshStats());
   me.hp=HP_BASE;
@@ -859,6 +931,10 @@ function setManualPaused(v){
 }
 document.getElementById('pauseBtn').onclick=()=>setManualPaused(!manualPaused);
 document.getElementById('resumeBtn').onclick=()=>setManualPaused(false);
+document.getElementById('buildHdr').onclick=()=>{
+  const b=document.getElementById('buildBody'), hide=b.style.display!=='none';
+  b.style.display=hide?'none':'block'; document.getElementById('buildToggle').textContent=hide?'▸':'▾';
+};
 addEventListener('keydown',e=>{
   if(e.key==='Escape'&&alive) setManualPaused(!manualPaused);
   if(upgradeOpen){
@@ -896,7 +972,7 @@ function loop(t){
         document.getElementById('finalLvl').textContent=me.level;
         document.getElementById('retainedXpText').textContent=retainedXp;
         document.getElementById('retainedLvlText').textContent=retainedLvl;
-        document.getElementById('deathMsg').textContent='The danger zone consumed your core!';
+        document.getElementById('deathMsg').textContent='The danger zone killed you!';
         document.getElementById('respawn').style.display='flex';
       }
     }
@@ -911,14 +987,15 @@ function loop(t){
 
     if(!manualPaused){
       let mvx,mvy;
-      if(now<me.lungeUntil){
-        mvx=me.lungeDX*LUNGE_SPEED; mvy=me.lungeDY*LUNGE_SPEED;
+      if(now<me.dashUntil){
+        mvx=me.dashDX*DASH_SPEED; mvy=me.dashDY*DASH_SPEED;
       } else {
         const {dx,dy}=ptrToWorld(); const dist=Math.hypot(dx,dy)||1;
         let speed=BASE_SPEED/(1+me.level*0.05)*me.speedMult;
         if(me.berserkStacks>0 && me.hp/maxHpTotal<0.40) speed*=(1+0.30*me.berserkStacks);
         if(now<me.adrenalineUntil) speed*=1.30;
-        if(now<me.lungeEndlagUntil) speed*=0.42;
+        if(now<me.dashEndlagUntil) speed*=0.42;
+        for(const id in peers){ const fp=peers[id]; if(fp&&fp.frost&&Math.hypot(fp.rx-me.x,fp.ry-me.y)<radiusFromLevel(fp.level||1,fp.bulk||0)+radiusFromLevel(me.level,me.bulk)+70){ speed*=0.7; break; } }
         mvx=dist>6?dx/dist*speed:0; mvy=dist>6?dy/dist*speed:0;
       }
       me.x=Math.min(WORLD,Math.max(0,me.x+mvx+me.kx));
@@ -939,6 +1016,7 @@ function loop(t){
         if(me.magnet>0&&fd<r+me.magnet){f.x+=(me.x-f.x)*0.12;f.y+=(me.y-f.y)*0.12;}
         if(fd<r){
           eaten.add(i); me.xp+=Math.round((f.big?18:7)*me.xpMult); me.level=levelFromXp(me.xp);
+          if(me.pelletHeal) me.hp=Math.min(maxHpTotal,me.hp+me.pelletHeal);
           net&&net.sendFood({i}); checkUpgradeSteps();
           setTimeout(()=>{
             if(f.big){const ang=Math.random()*Math.PI*2,rad=Math.sqrt(Math.random())*CENTER_RADIUS;food[i].x=FCX+Math.cos(ang)*rad;food[i].y=FCY+Math.sin(ang)*rad;}
@@ -949,13 +1027,14 @@ function loop(t){
       }
     }
 
-    // Minions: 75 HP, Body-blocks, attacks & eats food
-    if(me.orbiterCount>0){
-      if(!me.orbiters||me.orbiters.length!==me.orbiterCount){
-        me.orbiters=Array.from({length:me.orbiterCount},(_,i)=>({
-          angle:(i/me.orbiterCount)*Math.PI*2,
-          hp:75,
-          maxHp:75,
+    // Minions: 30 HP, weak attacks, partial body-block, eat pellets for half XP
+    if(me.minionCount>0){
+      if(!me.minionList||me.minionList.length!==me.minionCount){
+        const mHp=30+me.minionHpBonus;
+        me.minionList=Array.from({length:me.minionCount},(_,i)=>({
+          angle:0,
+          hp:mHp,
+          maxHp:mHp,
           respawnAt:0,
           dmgCooldown:0,
           x:0,
@@ -963,11 +1042,13 @@ function loop(t){
         }));
       }
       const orbitR=r*2.35, orbSpeed=0.045, orbR=r*0.42;
-      me.orbiters.forEach(orb=>{
+      const mDmg=Math.round((6+me.minionDmgBonus)*me.minionBoost);
+      me.orbitBase=(me.orbitBase||0)+orbSpeed;
+      me.minionList.forEach((orb,mi)=>{
         if(now<orb.respawnAt) return;
         if(orb.hp<=0 && now>=orb.respawnAt){ orb.hp=orb.maxHp; }
 
-        orb.angle+=orbSpeed;
+        orb.angle=me.orbitBase+(mi/me.minionCount)*Math.PI*2;
         orb.x=me.x+Math.cos(orb.angle)*orbitR;
         orb.y=me.y+Math.sin(orb.angle)*orbitR;
 
@@ -977,7 +1058,7 @@ function loop(t){
             if(eaten.has(i))continue;
             const f=food[i];
             if(Math.hypot(f.x-orb.x, f.y-orb.y)<orbR+5){
-              eaten.add(i); me.xp+=Math.round((f.big?18:7)*me.xpMult); me.level=levelFromXp(me.xp);
+              eaten.add(i); me.xp+=Math.round((f.big?18:7)*me.xpMult*0.5); me.level=levelFromXp(me.xp);
               net&&net.sendFood({i}); checkUpgradeSteps();
               setTimeout(()=>{
                 if(f.big){const ang=Math.random()*Math.PI*2,rad=Math.sqrt(Math.random())*CENTER_RADIUS;food[i].x=FCX+Math.cos(ang)*rad;food[i].y=FCY+Math.sin(ang)*rad;}
@@ -997,11 +1078,11 @@ function loop(t){
             const pr=radiusFromLevel(p.level||1,p.bulk||0);
             const od=Math.hypot(p.rx-orb.x,p.ry-orb.y);
             if(od<pr+orbR){
-              net&&net.sendHit({dmg:14,byName:me.name+' (minion)',kx:(p.rx-orb.x)/(od||1)*18,ky:(p.ry-orb.y)/(od||1)*18},id);
+              net&&net.sendHit({dmg:mDmg,byName:me.name+' (minion)',kx:(p.rx-orb.x)/(od||1)*18,ky:(p.ry-orb.y)/(od||1)*18},id);
               spawnHitSparks(p.rx, p.ry, (p.rx-orb.x)/(od||1), (p.ry-orb.y)/(od||1), '#00ff88');
-              spawnDamageText(p.rx, p.ry-pr, 14, false);
-              orb.hp-=15;
-              orb.dmgCooldown=now+650;
+              spawnDamageText(p.rx, p.ry-pr, mDmg, false);
+              orb.hp-=10;
+              orb.dmgCooldown=now+900;
               hit=true;
             }
           }
@@ -1011,17 +1092,17 @@ function loop(t){
             const br=radiusFromLevel(b.level||1,b.bulk||0);
             const od=Math.hypot(b.rx-orb.x,b.ry-orb.y);
             if(od<br+orbR){
-              net&&net.sendHit({dmg:14,byName:me.name+' (minion)',kx:(b.rx-orb.x)/(od||1)*18,ky:(b.ry-orb.y)/(od||1)*18},id);
+              net&&net.sendHit({dmg:mDmg,byName:me.name+' (minion)',kx:(b.rx-orb.x)/(od||1)*18,ky:(b.ry-orb.y)/(od||1)*18},id);
               spawnHitSparks(b.rx, b.ry, (b.rx-orb.x)/(od||1), (b.ry-orb.y)/(od||1), '#00ff88');
-              spawnDamageText(b.rx, b.ry-br, 14, false);
-              orb.hp-=15;
-              orb.dmgCooldown=now+650;
+              spawnDamageText(b.rx, b.ry-br, mDmg, false);
+              orb.hp-=10;
+              orb.dmgCooldown=now+900;
               hit=true;
             }
           }
           if(orb.hp<=0){
             orb.hp=0;
-            orb.respawnAt=now+14000;
+            orb.respawnAt=now+Math.max(8000,20000-me.minionHpBonus*200);
             const popFx={type:'minionPop',x:orb.x,y:orb.y,color:me.color};
             visualFx.push(popFx);
             net&&net.sendFx(popFx);
@@ -1030,11 +1111,11 @@ function loop(t){
       });
     }
 
-    // Lunge hit detection (Capped at MAX_DAMAGE_CAP)
-    if(!manualPaused && now<me.lungeUntil){
+    // Dash hit detection (Capped at MAX_DAMAGE_CAP)
+    if(!manualPaused && now<me.dashUntil){
       let berserkDmgMult=1;
       if(me.berserkStacks>0 && me.hp/maxHpTotal<0.40) berserkDmgMult+=(0.20*me.berserkStacks);
-      const rawDmg=(16+me.level*1.3)*me.lungeDmgMult*berserkDmgMult;
+      const rawDmg=(16+me.level*1.3)*me.dashDmgMult*berserkDmgMult;
       const baseDmg=Math.min(MAX_DAMAGE_CAP, rawDmg);
 
       for(const id in peers){
@@ -1043,7 +1124,7 @@ function loop(t){
         const pd=Math.hypot(p.rx-me.x,p.ry-me.y);
         if(pd<r+pr){
           me.hitSet.add(id);
-          let finalDmg=baseDmg;
+          let finalDmg=baseDmg+(me.spikeDash?me.spikes*2:0);
           let isCrit=false;
           if(me.executioner>0 && p.hp!=null && p.maxHp && (p.hp/p.maxHp)<0.50){
             finalDmg=Math.min(MAX_DAMAGE_CAP, finalDmg*(1+me.executioner));
@@ -1054,9 +1135,9 @@ function loop(t){
           spawnHitSparks(p.rx, p.ry, dx, dy, '#00ff88');
           spawnDamageText(p.rx, p.ry-pr-10, Math.round(finalDmg), isCrit);
 
-          net&&net.sendHit({dmg:finalDmg,byName:me.name,kx:dx*KNOCK,ky:dy*KNOCK},id);
+          net&&net.sendHit({dmg:finalDmg,byName:me.name,kx:dx*KNOCK*me.knockMult,ky:dy*KNOCK*me.knockMult},id);
           if(peers[id]){peers[id].vkx=(peers[id].vkx||0)+dx*KNOCK*0.8;peers[id].vky=(peers[id].vky||0)+dy*KNOCK*0.8;}
-          if(me.vampiric) me.hp=Math.min(maxHpTotal,me.hp+finalDmg*me.vampiric);
+          if(me.lifesteal) me.hp=Math.min(maxHpTotal,me.hp+finalDmg*me.lifesteal);
         }
       }
       for(const id in bots){
@@ -1065,7 +1146,7 @@ function loop(t){
         const bd=Math.hypot(b.rx-me.x,b.ry-me.y);
         if(bd<r+br){
           me.hitSet.add(id);
-          let finalDmg=baseDmg;
+          let finalDmg=baseDmg+(me.spikeDash?me.spikes*2:0);
           let isCrit=false;
           if(me.executioner>0 && (b.hp/b.maxHp)<0.50){
             finalDmg=Math.min(MAX_DAMAGE_CAP, finalDmg*(1+me.executioner));
@@ -1076,9 +1157,9 @@ function loop(t){
           spawnHitSparks(b.rx, b.ry, dx, dy, '#00ff88');
           spawnDamageText(b.rx, b.ry-br-10, Math.round(finalDmg), isCrit);
 
-          net&&net.sendHit({dmg:finalDmg,byName:me.name,kx:dx*KNOCK,ky:dy*KNOCK},id);
+          net&&net.sendHit({dmg:finalDmg,byName:me.name,kx:dx*KNOCK*me.knockMult,ky:dy*KNOCK*me.knockMult},id);
           if(bots[id]){bots[id].vkx=(bots[id].vkx||0)+dx*KNOCK*0.5;bots[id].vky=(bots[id].vky||0)+dy*KNOCK*0.5;}
-          if(me.vampiric) me.hp=Math.min(maxHpTotal,me.hp+finalDmg*me.vampiric);
+          if(me.lifesteal) me.hp=Math.min(maxHpTotal,me.hp+finalDmg*me.lifesteal);
         }
       }
     } else {
@@ -1089,10 +1170,10 @@ function loop(t){
         const dx=me.x-p.rx, dy=me.y-p.ry, d=Math.hypot(dx,dy)||0.001, minD=r+pr;
         if(d<minD){
           const push=(minD-d)*0.5; me.x+=(dx/d)*push; me.y+=(dy/d)*push;
-          if(me.thorns>0 && Math.random()<0.08){
-            net&&net.sendHit({dmg:me.thorns*0.4,byName:me.name+' (spikes)'},id);
+          if(me.spikes>0 && Math.random()<0.08){
+            net&&net.sendHit({dmg:me.spikes*0.4,byName:me.name+' (spike)'},id);
             spawnHitSparks(p.rx, p.ry, -dx, -dy, '#ff3366');
-            spawnDamageText(p.rx, p.ry-pr, Math.round(me.thorns*0.4), false);
+            spawnDamageText(p.rx, p.ry-pr, Math.round(me.spikes*0.4), false);
           }
         }
       }
@@ -1102,10 +1183,10 @@ function loop(t){
         const dx=me.x-b.rx, dy=me.y-b.ry, d=Math.hypot(dx,dy)||0.001, minD=r+br;
         if(d<minD){
           const push=(minD-d)*0.5; me.x+=(dx/d)*push; me.y+=(dy/d)*push;
-          if(me.thorns>0 && Math.random()<0.08){
-            net&&net.sendHit({dmg:me.thorns*0.4,byName:me.name+' (spikes)'},id);
+          if(me.spikes>0 && Math.random()<0.08){
+            net&&net.sendHit({dmg:me.spikes*0.4,byName:me.name+' (spike)'},id);
             spawnHitSparks(b.rx, b.ry, -dx, -dy, '#ff3366');
-            spawnDamageText(b.rx, b.ry-br, Math.round(me.thorns*0.4), false);
+            spawnDamageText(b.rx, b.ry-br, Math.round(me.spikes*0.4), false);
           }
         }
       }
@@ -1119,16 +1200,16 @@ function loop(t){
         x:me.x,y:me.y,level:me.level,name:me.name,color:me.color,bulk:me.bulk,
         hp:me.hp,maxHp:maxHpTotal,
         shield:me.shieldCharges||0,
-        minions:me.orbiterCount||0,
-        thorns:me.thorns||0,
+        minions:me.minionCount||0,
+        spikes:me.spikes||0,
         frost:me.frostAura?1:0,
         berserk:(me.berserkStacks>0 && (me.hp/maxHpTotal)<0.40)?1:0
       });
     }
 
     // ── HUD Updates ──
-    const cdTotal=LUNGE_COOLDOWN*me.lungeCdMult;
-    const cdRemaining=Math.max(0,me.lungeCooldownUntil-now);
+    const cdTotal=DASH_COOLDOWN*me.dashCdMult;
+    const cdRemaining=Math.max(0,me.dashCooldownUntil-now);
     const xpPct=Math.round(xpProgress(me.xp)*100);
     document.getElementById('lvlText').textContent='Lv '+me.level;
     document.getElementById('xpText').textContent=me.xp+' XP';
@@ -1136,19 +1217,22 @@ function loop(t){
     document.getElementById('xpfill').style.width=xpPct+'%';
     document.getElementById('hpfill').style.width=(me.hp/maxHpTotal*100)+'%';
     document.getElementById('hpText').textContent=Math.ceil(me.hp)+'/'+maxHpTotal;
-    document.getElementById('lungefill').style.width=(100-cdRemaining/cdTotal*100)+'%';
-    document.getElementById('lungeTimerText').textContent=cdRemaining>0?(cdRemaining/1000).toFixed(1)+'s':'READY';
+    document.getElementById('dashfill').style.width=(100-cdRemaining/cdTotal*100)+'%';
+    document.getElementById('dashTimerText').textContent=cdRemaining>0?(cdRemaining/1000).toFixed(1)+'s':'READY';
     document.getElementById('zoneWarn').style.display=inZone?'block':'none';
 
+    if(me.level+'|'+JSON.stringify(me.upgradeCounts)!==lastBuildSig){ lastBuildSig=me.level+'|'+JSON.stringify(me.upgradeCounts); renderBuild(); }
+    document.getElementById('statSpikes').textContent=me.spikes>0?me.spikes:'-';
+    document.getElementById('statRegen').textContent=(REGEN_RATE*me.regenMult).toFixed(1)+'/s';
     // Detailed stats grid
     document.getElementById('statSpeed').textContent=(me.speedMult*(me.berserkStacks&&me.hp/maxHpTotal<0.4?1+0.3*me.berserkStacks:1)*(now<me.adrenalineUntil?1.3:1)).toFixed(2)+'x';
-    document.getElementById('statDmg').textContent=Math.min(MAX_DAMAGE_CAP, Math.round((16+me.level*1.3)*me.lungeDmgMult));
+    document.getElementById('statDmg').textContent=Math.min(MAX_DAMAGE_CAP, Math.round((16+me.level*1.3)*me.dashDmgMult));
     document.getElementById('statCd').textContent=(cdTotal/1000).toFixed(2)+'s';
-    document.getElementById('statVamp').textContent=Math.round(me.vampiric*100)+'%';
+    document.getElementById('statVamp').textContent=Math.round(me.lifesteal*100)+'%';
     document.getElementById('statMag').textContent='+'+me.magnet;
     document.getElementById('statXp').textContent=me.xpMult.toFixed(2)+'x';
-    const aliveOrbs=me.orbiters?me.orbiters.filter(o=>o.hp>0&&now>=o.respawnAt).length:0;
-    document.getElementById('statMinions').textContent=me.orbiterCount>0?`${aliveOrbs}/${me.orbiterCount}`:'0';
+    const aliveOrbs=me.minionList?me.minionList.filter(o=>o.hp>0&&now>=o.respawnAt).length:0;
+    document.getElementById('statMinions').textContent=me.minionCount>0?`${aliveOrbs}/${me.minionCount}`:'0';
 
     if(me.shockwaveLevel>0){
       const waveCd=Math.max(0, me.shockwaveCooldownUntil-now);
@@ -1331,7 +1415,7 @@ function draw(){
     }
 
     // Draw Peer's Sharp Spikes if active
-    if(p.thorns>0){
+    if(p.spikes>0){
       drawRealSpikes(p.rx, p.ry, pr, 12);
     }
 
@@ -1372,11 +1456,11 @@ function draw(){
   }
 
   // Local Player's Orbiting Minions
-  if(me&&alive&&me.orbiters){
+  if(me&&alive&&me.minionList){
     const r=radiusFromLevel(me.level,me.bulk);
     const orbR=r*0.42;
     const now=performance.now();
-    me.orbiters.forEach(orb=>{
+    me.minionList.forEach(orb=>{
       if(now<orb.respawnAt){
         ctx.beginPath(); ctx.arc(orb.x,orb.y,orbR,0,Math.PI*2);
         ctx.strokeStyle='rgba(0,255,136,0.2)'; ctx.lineWidth=1.5;
@@ -1403,7 +1487,7 @@ function draw(){
     const r=radiusFromLevel(me.level,me.bulk);
 
     // Draw Sharp Protruding Spikes if active
-    if(me.thorns>0){
+    if(me.spikes>0){
       drawRealSpikes(me.x, me.y, r, 12);
     }
 
