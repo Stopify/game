@@ -5,100 +5,227 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Blob Arena</title>
 <style>
-:root{--bg:#0b1020;--grid:#161d33;--panel:#11162a;--panel-b:#232b4a;--text:#eef1ff;--sub:#8b93b8;--accent:#5ee1c8;--accent2:#ff6b9d;--gold:#ffd166;}
+:root{
+  --bg:#090c10;
+  --bg-card:#11151c;
+  --bg-card-header:#171d26;
+  --grid:#141b24;
+  --panel:rgba(16,21,29,0.92);
+  --panel-b:#1f2937;
+  --panel-border:rgba(0,255,136,0.22);
+  --neon:#00ff88;
+  --neon-glow:rgba(0,255,136,0.35);
+  --neon-cyan:#00e5ff;
+  --text:#f0f6fc;
+  --sub:#8b949e;
+  --accent:#00ff88;
+  --accent-hover:#2ee59d;
+  --accent2:#ff3366;
+  --gold:#ffd166;
+  --danger:#ff3860;
+}
 *{margin:0;padding:0;box-sizing:border-box;}
-html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Roboto,sans-serif;}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"SF Pro Display",sans-serif;}
 canvas{display:block;width:100%;height:100%;touch-action:none;}
-#start{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,#1a2140,var(--bg));z-index:10;padding:16px;overflow:auto;}
-#card{background:var(--panel);border:1px solid var(--panel-b);border-radius:16px;padding:24px;width:min(360px,92vw);text-align:center;}
-#card h1{font-size:22px;margin-bottom:4px;}
-#card p{color:var(--sub);font-size:12px;margin-bottom:14px;}
-#name,#lobby{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--panel-b);background:transparent;color:var(--text);font-size:15px;margin-bottom:10px;}
-#lobbyRow{display:flex;gap:6px;margin-bottom:12px;}
-#lobbyRow input{flex:1;text-align:center;letter-spacing:2px;font-weight:700;text-transform:uppercase;}
-#lobbyRow button{padding:0 12px;border-radius:8px;border:1px solid var(--panel-b);background:transparent;color:var(--sub);cursor:pointer;font-size:11px;}
-#colors{display:flex;gap:8px;justify-content:center;margin-bottom:12px;}
-.swatch{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;}
-.swatch.sel{border-color:var(--text);}
-#editor{width:192px;height:192px;image-rendering:pixelated;border-radius:50%;border:2px solid var(--panel-b);cursor:crosshair;touch-action:none;}
-#editorWrap{margin-bottom:10px;}
-#editorWrap .lbl{font-size:11px;color:var(--sub);margin-bottom:6px;}
-#clearSkin{margin-top:8px;font-size:11px;background:transparent;border:1px solid var(--panel-b);color:var(--sub);padding:5px 10px;border-radius:6px;cursor:pointer;}
-#play{width:100%;padding:12px;border:none;border-radius:8px;background:var(--accent);color:#04231d;font-weight:700;font-size:15px;cursor:pointer;margin-top:14px;}
-#status{margin-top:10px;font-size:11px;color:var(--sub);}
 
-/* HUD & Stats */
-#hud{position:fixed;left:12px;bottom:12px;z-index:5;background:rgba(17,22,42,0.92);backdrop-filter:blur(6px);border:1px solid var(--panel-b);border-radius:12px;padding:10px 14px;font-size:13px;display:none;min-width:215px;max-width:265px;}
-#hud .lvl{font-weight:700;color:var(--accent);}
-.bar-wrap{margin-top:6px;}
-.bar-lbl{display:flex;justify-content:space-between;font-size:9.5px;color:var(--sub);margin-bottom:2px;}
-.bar-track{height:6px;background:var(--panel-b);border-radius:4px;overflow:hidden;}
-.bar-fill{height:100%;border-radius:4px;width:0%;transition:width 0.1s linear;}
-#xpfill{background:var(--accent);}
-#hpfill{background:#ff6b6b;}
-#lungefill{background:var(--accent2);}
+/* Start Screen — Sleek Dark Hardware / Synth VST Aesthetic */
+#start{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 35%, #151d28 0%, #080a0e 85%);z-index:10;padding:16px;overflow:auto;}
+#card{
+  background:linear-gradient(180deg, #161c24 0%, #0e1218 100%);
+  border:1px solid rgba(0,255,136,0.25);
+  border-radius:18px;
+  padding:26px 28px;
+  width:min(380px,94vw);
+  text-align:center;
+  box-shadow:0 12px 40px rgba(0,0,0,0.8), 0 0 25px rgba(0,255,136,0.08), inset 0 1px 1px rgba(255,255,255,0.12);
+}
+#card .brand{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--neon);margin-bottom:4px;font-weight:800;}
+#card h1{font-size:24px;font-weight:900;letter-spacing:-0.5px;color:#fff;margin-bottom:6px;text-shadow:0 0 18px rgba(0,255,136,0.3);}
+#card p{color:var(--sub);font-size:12px;margin-bottom:16px;line-height:1.45;}
+
+#name,#lobby{
+  width:100%;padding:11px 14px;border-radius:10px;
+  border:1px solid rgba(255,255,255,0.1);
+  background:#0b0e14;color:#fff;font-size:14px;margin-bottom:10px;
+  outline:none;transition:border-color .2s, box-shadow .2s;
+}
+#name:focus,#lobby:focus{
+  border-color:var(--neon);
+  box-shadow:0 0 10px rgba(0,255,136,0.25);
+}
+#lobbyRow{display:flex;gap:8px;margin-bottom:14px;}
+#lobbyRow input{flex:1;text-align:center;letter-spacing:3px;font-weight:800;text-transform:uppercase;}
+#lobbyRow button{
+  padding:0 14px;border-radius:10px;border:1px solid rgba(0,255,136,0.25);
+  background:#131822;color:var(--neon);cursor:pointer;font-size:11px;font-weight:700;
+  transition:all .15s;
+}
+#lobbyRow button:hover{background:#1a2332;border-color:var(--neon);box-shadow:0 0 10px rgba(0,255,136,0.25);}
+
+#colors{display:flex;gap:8px;justify-content:center;margin-bottom:14px;}
+.swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .15s, border-color .15s;}
+.swatch:hover{transform:scale(1.15);}
+.swatch.sel{border-color:#fff;box-shadow:0 0 10px var(--neon);}
+
+#editorWrap{margin-bottom:14px;}
+#editorWrap .lbl{font-size:11px;color:var(--sub);margin-bottom:6px;font-weight:600;letter-spacing:0.5px;}
+#editor{
+  width:180px;height:180px;image-rendering:pixelated;border-radius:50%;
+  border:2px solid rgba(0,255,136,0.3);background:#090c10;cursor:crosshair;touch-action:none;
+  box-shadow:0 0 16px rgba(0,255,136,0.1), inset 0 0 10px rgba(0,0,0,0.8);
+}
+#clearSkin{
+  margin-top:8px;font-size:11px;background:#131822;border:1px solid rgba(255,255,255,0.1);
+  color:var(--sub);padding:5px 12px;border-radius:6px;cursor:pointer;font-weight:600;transition:all .15s;
+}
+#clearSkin:hover{color:#fff;border-color:rgba(255,255,255,0.25);}
+
+#play{
+  width:100%;padding:13px;border:none;border-radius:10px;
+  background:linear-gradient(180deg, #00ff88 0%, #05d572 100%);
+  color:#041a10;font-weight:900;font-size:15px;letter-spacing:0.5px;
+  cursor:pointer;margin-top:14px;box-shadow:0 0 20px rgba(0,255,136,0.35);
+  transition:all .15s;
+}
+#play:hover{transform:translateY(-1px);box-shadow:0 0 26px rgba(0,255,136,0.55);}
+#play:active{transform:translateY(1px);}
+#status{margin-top:12px;font-size:11.5px;color:var(--sub);}
+
+/* HUD & Stats Panel — Precision Dark Synth Hardware Look */
+#hud{
+  position:fixed;left:14px;bottom:14px;z-index:5;
+  background:linear-gradient(180deg, rgba(19,25,34,0.94) 0%, rgba(11,15,22,0.96) 100%);
+  backdrop-filter:blur(10px);
+  border:1px solid rgba(0,255,136,0.22);
+  border-radius:14px;padding:12px 16px;font-size:13px;display:none;
+  min-width:225px;max-width:275px;
+  box-shadow:0 8px 30px rgba(0,0,0,0.65), 0 0 15px rgba(0,255,136,0.06), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+#hud .top-row{display:flex;justify-content:space-between;align-items:center;}
+#hud .lvl{font-weight:900;color:var(--neon);text-shadow:0 0 8px rgba(0,255,136,0.4);letter-spacing:0.5px;}
+#hud .xp-val{font-size:11px;color:var(--sub);font-weight:700;}
+
+.bar-wrap{margin-top:7px;}
+.bar-lbl{display:flex;justify-content:space-between;font-size:9.5px;color:var(--sub);font-weight:700;margin-bottom:3px;letter-spacing:0.3px;}
+.bar-track{height:6px;background:#0b0e14;border:1px solid rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;box-shadow:inset 0 1px 3px rgba(0,0,0,0.6);}
+.bar-fill{height:100%;border-radius:4px;width:0%;transition:width 0.08s linear;}
+#xpfill{background:linear-gradient(90deg, #00ff88, #00e5ff);box-shadow:0 0 8px rgba(0,255,136,0.5);}
+#hpfill{background:linear-gradient(90deg, #ff3366, #ff8844);box-shadow:0 0 8px rgba(255,51,102,0.4);}
+#lungefill{background:linear-gradient(90deg, #00e5ff, #00ff88);box-shadow:0 0 8px rgba(0,229,255,0.4);}
 #hpbar-track{height:8px;}
 
-/* Detailed stats panel */
-#statsGrid{margin-top:8px;padding-top:8px;border-top:1px solid var(--panel-b);display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;font-size:10px;}
-.stat-item{display:flex;align-items:center;justify-content:space-between;color:var(--sub);}
-.stat-val{font-weight:700;color:var(--text);margin-left:4px;}
+/* Detailed stats grid */
+#statsGrid{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:10px;}
+.stat-item{display:flex;align-items:center;justify-content:space-between;color:var(--sub);font-weight:600;}
+.stat-val{font-weight:800;color:#fff;margin-left:4px;}
 
-#shieldRow{font-size:10px;margin-top:5px;display:none;font-weight:700;}
-#zoneWarn{font-size:10px;color:#ff5555;margin-top:5px;display:none;font-weight:700;}
+#shieldRow{font-size:10px;margin-top:6px;display:none;font-weight:800;letter-spacing:0.3px;}
+#zoneWarn{font-size:10px;color:#ff3366;margin-top:6px;display:none;font-weight:800;letter-spacing:0.3px;animation:warnPulse 1s infinite alternate;}
+@keyframes warnPulse{0%{opacity:0.6;} 100%{opacity:1;}}
 
-/* Floating Kill announcement */
-#killBanner{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:rgba(20,28,55,0.95);border:1px solid var(--gold);color:var(--gold);padding:8px 18px;border-radius:20px;font-weight:800;font-size:14px;display:none;z-index:9;box-shadow:0 0 16px rgba(255,209,102,0.35);pointer-events:none;}
+/* Kill announcement banner */
+#killBanner{
+  position:fixed;top:55px;left:50%;transform:translateX(-50%);
+  background:linear-gradient(180deg, #182230 0%, #0e141e 100%);
+  border:1px solid var(--neon);color:var(--neon);
+  padding:9px 22px;border-radius:30px;font-weight:900;font-size:14px;
+  display:none;z-index:9;box-shadow:0 0 25px rgba(0,255,136,0.4);
+  pointer-events:none;letter-spacing:0.5px;
+}
 
-#lobbyTag{position:fixed;left:12px;top:12px;z-index:5;background:var(--panel);border:1px solid var(--panel-b);border-radius:10px;padding:6px 10px;font-size:11px;color:var(--sub);display:none;}
-#pauseBtn{position:fixed;right:12px;bottom:12px;z-index:5;background:var(--panel);border:1px solid var(--panel-b);border-radius:50%;width:40px;height:40px;font-size:16px;cursor:pointer;display:none;color:var(--text);}
-#board{position:fixed;right:12px;top:12px;z-index:5;background:var(--panel);border:1px solid var(--panel-b);border-radius:10px;padding:10px 12px;font-size:12px;display:none;min-width:150px;}
-#board h3{font-size:11px;color:var(--sub);text-transform:uppercase;margin-bottom:6px;letter-spacing:.5px;}
-#board div.row{display:flex;justify-content:space-between;padding:2px 0;}
+#lobbyTag{
+  position:fixed;left:14px;top:14px;z-index:5;
+  background:rgba(17,22,30,0.85);backdrop-filter:blur(6px);
+  border:1px solid rgba(255,255,255,0.08);border-radius:10px;
+  padding:6px 12px;font-size:11px;color:var(--sub);display:none;font-weight:600;
+}
+#lobbyTag b{color:var(--neon);}
+#pauseBtn{
+  position:fixed;right:14px;bottom:14px;z-index:5;
+  background:#131822;border:1px solid rgba(0,255,136,0.25);
+  border-radius:50%;width:42px;height:42px;font-size:16px;
+  cursor:pointer;display:none;color:#fff;transition:all .15s;
+}
+#pauseBtn:hover{border-color:var(--neon);box-shadow:0 0 12px rgba(0,255,136,0.3);}
 
-#respawn,#pauseOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);z-index:9;}
-#respawn .box,#pauseOverlay .box{background:var(--panel);border:1px solid var(--panel-b);border-radius:14px;padding:24px;text-align:center;max-width:420px;}
-#respawn button,#pauseOverlay button{margin-top:14px;padding:10px 20px;border:none;border-radius:8px;background:var(--accent2);color:#2a0716;font-weight:700;cursor:pointer;font-size:14px;}
-#upgradeOverlay{position:fixed;left:12px;top:70px;z-index:9;display:none;max-width:250px;}
-#upgradeOverlay .box{background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:12px;text-align:left;box-shadow:0 4px 18px rgba(0,0,0,.35);}
-#upgradeOverlay .hdr{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px;}
-#upgradeCards{display:flex;flex-direction:column;gap:6px;}
-.upcard{width:100%;padding:8px 10px;border:1px solid var(--panel-b);border-radius:8px;cursor:pointer;background:rgba(127,127,127,.08);color:var(--text);display:flex;align-items:center;gap:8px;text-align:left;transition:all .15s ease;}
-.upcard:hover{background:rgba(127,127,127,.18);transform:translateX(2px);}
-.upcard.t2{border-color:#5ee1c880;}
-.upcard.t2:hover{border-color:var(--accent);}
-.upcard.t3{border-color:#ffd16680;}
-.upcard.t3:hover{border-color:#ffd166;}
-.upcard .ic{font-size:18px;flex-shrink:0;}
+/* Leaderboard */
+#board{
+  position:fixed;right:14px;top:14px;z-index:5;
+  background:linear-gradient(180deg, rgba(19,25,34,0.92) 0%, rgba(11,15,22,0.95) 100%);
+  backdrop-filter:blur(8px);
+  border:1px solid rgba(0,255,136,0.2);border-radius:12px;padding:10px 14px;
+  font-size:12px;display:none;min-width:160px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.6);
+}
+#board h3{font-size:10.5px;color:var(--neon);text-transform:uppercase;margin-bottom:6px;letter-spacing:1px;font-weight:800;}
+#board div.row{display:flex;justify-content:space-between;padding:3px 0;font-weight:600;color:#c9d1d9;}
+
+/* Modals */
+#respawn,#pauseOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(5,7,10,0.82);backdrop-filter:blur(6px);z-index:9;}
+#respawn .box,#pauseOverlay .box{
+  background:linear-gradient(180deg, #171d26 0%, #0e1218 100%);
+  border:1px solid rgba(0,255,136,0.25);border-radius:16px;
+  padding:26px 30px;text-align:center;max-width:420px;
+  box-shadow:0 16px 50px rgba(0,0,0,0.85), 0 0 25px rgba(0,255,136,0.1);
+}
+#respawn button,#pauseOverlay button{
+  margin-top:16px;padding:11px 22px;border:none;border-radius:10px;
+  background:linear-gradient(180deg, #00ff88 0%, #05d572 100%);
+  color:#05140d;font-weight:900;cursor:pointer;font-size:14px;
+  box-shadow:0 0 18px rgba(0,255,136,0.35);transition:all .15s;
+}
+#respawn button:hover,#pauseOverlay button:hover{transform:translateY(-1px);box-shadow:0 0 24px rgba(0,255,136,0.5);}
+
+/* Upgrade Cards */
+#upgradeOverlay{position:fixed;left:14px;top:70px;z-index:9;display:none;max-width:260px;}
+#upgradeOverlay .box{
+  background:linear-gradient(180deg, #161c24 0%, #0d1117 100%);
+  border:1px solid var(--neon);border-radius:14px;padding:14px;
+  text-align:left;box-shadow:0 12px 35px rgba(0,0,0,0.7), 0 0 20px rgba(0,255,136,0.15);
+}
+#upgradeOverlay .hdr{font-size:12px;font-weight:900;color:var(--neon);margin-bottom:10px;letter-spacing:0.5px;text-transform:uppercase;}
+#upgradeCards{display:flex;flex-direction:column;gap:7px;}
+.upcard{
+  width:100%;padding:9px 11px;border:1px solid rgba(255,255,255,0.08);border-radius:10px;
+  cursor:pointer;background:#0d1117;color:var(--text);display:flex;align-items:center;
+  gap:9px;text-align:left;transition:all .15s ease;
+}
+.upcard:hover{background:#161d28;border-color:var(--neon);transform:translateX(3px);box-shadow:0 0 12px rgba(0,255,136,0.2);}
+.upcard.t2{border-color:rgba(0,229,255,0.3);}
+.upcard.t2:hover{border-color:var(--neon-cyan);box-shadow:0 0 12px rgba(0,229,255,0.25);}
+.upcard.t3{border-color:rgba(255,209,102,0.3);}
+.upcard.t3:hover{border-color:var(--gold);box-shadow:0 0 12px rgba(255,209,102,0.25);}
+.upcard .ic{font-size:20px;flex-shrink:0;}
 .upcard .txt{display:flex;flex-direction:column;min-width:0;flex:1;}
-.upcard .nm{font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:space-between;}
-.upcard .ds{font-size:9.5px;color:var(--sub);line-height:1.25;margin-top:2px;}
-.tier-badge{font-size:8px;padding:1px 4px;border-radius:3px;font-weight:700;}
-.t1 .tier-badge{background:#333;color:#aaa;}
-.t2 .tier-badge{background:#1a3a3a;color:var(--accent);}
-.t3 .tier-badge{background:#3a3000;color:var(--gold);}
-.stack-badge{font-size:8.5px;background:rgba(255,255,255,0.12);padding:1px 4px;border-radius:4px;color:var(--text);}
-.key-badge{font-size:9px;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.32);padding:1px 5px;border-radius:4px;color:var(--text);font-weight:800;font-family:monospace;margin-right:5px;}
+.upcard .nm{font-weight:800;font-size:11.5px;display:flex;align-items:center;justify-content:space-between;}
+.upcard .ds{font-size:9.5px;color:var(--sub);line-height:1.3;margin-top:2px;font-weight:500;}
+.tier-badge{font-size:8px;padding:1px 5px;border-radius:4px;font-weight:800;}
+.t1 .tier-badge{background:#1e2530;color:#94a3b8;}
+.t2 .tier-badge{background:#0d2b33;color:var(--neon-cyan);}
+.t3 .tier-badge{background:#332900;color:var(--gold);}
+.stack-badge{font-size:8.5px;background:rgba(0,255,136,0.14);border:1px solid rgba(0,255,136,0.3);padding:1px 5px;border-radius:4px;color:var(--neon);font-weight:800;}
+.key-badge{font-size:9.5px;background:#1a2332;border:1px solid rgba(0,255,136,0.35);padding:1px 5px;border-radius:4px;color:var(--neon);font-weight:900;font-family:monospace;margin-right:6px;}
 </style>
 </head>
 <body>
 <div id="start">
   <div id="card">
-    <h1>🟢 Blob Arena</h1>
-    <p>Serverless P2P — no account, no server. Everyone using the same lobby code lands in the same match.</p>
-    <input id="name" maxlength="14" placeholder="Your name">
+    <div class="brand">Audio-Style Arena</div>
+    <h1>🟢 BLOB ARENA</h1>
+    <p>High-speed competitive momentum arena. Pick upgrades, hunt foes, and dominate the center zone.</p>
+    <input id="name" maxlength="14" placeholder="Blob Pilot Name">
     <div id="lobbyRow">
       <input id="lobby" maxlength="6" placeholder="LOBBY">
       <button id="randomLobby">Random</button>
     </div>
     <div id="colors"></div>
     <div id="editorWrap">
-      <div class="lbl">Draw your blob skin</div>
+      <div class="lbl">CUSTOM BLOB SKIN MATRIX</div>
       <canvas id="editor" width="16" height="16"></canvas><br>
-      <button id="clearSkin">Reset to solid color</button>
+      <button id="clearSkin">Reset to Solid</button>
     </div>
-    <button id="play">Play</button>
-    <div id="status">Share your lobby code with friends before you hit Play.</div>
+    <button id="play">ENTER ARENA</button>
+    <div id="status">Share your lobby code with friends to join the same match.</div>
   </div>
 </div>
 
@@ -107,60 +234,64 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 
 <!-- HUD -->
 <div id="hud">
-  <div><span class="lvl" id="lvlText">Lv 1</span> · <span id="xpText">0 xp</span></div>
+  <div class="top-row">
+    <span class="lvl" id="lvlText">Lv 1</span>
+    <span class="xp-val" id="xpText">0 XP</span>
+  </div>
   <div class="bar-wrap">
-    <div class="bar-lbl"><span>XP</span><span id="xpPctText">0%</span></div>
+    <div class="bar-lbl"><span>ENERGY / XP</span><span id="xpPctText">0%</span></div>
     <div class="bar-track"><div class="bar-fill" id="xpfill"></div></div>
   </div>
   <div class="bar-wrap">
-    <div class="bar-lbl"><span>❤️ HP</span><span id="hpText">100/100</span></div>
+    <div class="bar-lbl"><span>HULL INTEGRITY</span><span id="hpText">100/100</span></div>
     <div class="bar-track" id="hpbar-track"><div class="bar-fill" id="hpfill" style="width:100%"></div></div>
   </div>
   <div class="bar-wrap">
-    <div class="bar-lbl"><span>⚔️ Lunge</span><span id="lungeTimerText">READY</span></div>
+    <div class="bar-lbl"><span>⚔️ LUNGE THRUSTER</span><span id="lungeTimerText">READY</span></div>
     <div class="bar-track"><div class="bar-fill" id="lungefill" style="width:100%"></div></div>
   </div>
   <div id="shieldRow"></div>
-  <div id="zoneWarn">☠️ DANGER ZONE — get out!</div>
+  <div id="zoneWarn">☠️ DANGER ZONE — TAKING DAMAGE</div>
 
   <!-- Detailed Stats Display -->
   <div id="statsGrid">
-    <div class="stat-item"><span>🏃 Speed:</span><span class="stat-val" id="statSpeed">1.0x</span></div>
-    <div class="stat-item"><span>⚔️ Damage:</span><span class="stat-val" id="statDmg">17</span></div>
-    <div class="stat-item"><span>⏱️ Lunge CD:</span><span class="stat-val" id="statCd">1.4s</span></div>
-    <div class="stat-item"><span>🩸 Lifesteal:</span><span class="stat-val" id="statVamp">0%</span></div>
-    <div class="stat-item"><span>🧲 Pull:</span><span class="stat-val" id="statMag">0</span></div>
-    <div class="stat-item"><span>🍒 XP Bonus:</span><span class="stat-val" id="statXp">1.0x</span></div>
-    <div class="stat-item"><span>🫧 Minions:</span><span class="stat-val" id="statMinions">0</span></div>
-    <div class="stat-item"><span>💫 Shockwave:</span><span class="stat-val" id="statWave">-</span></div>
+    <div class="stat-item"><span>Speed:</span><span class="stat-val" id="statSpeed">1.0x</span></div>
+    <div class="stat-item"><span>Strike Dmg:</span><span class="stat-val" id="statDmg">17</span></div>
+    <div class="stat-item"><span>Lunge CD:</span><span class="stat-val" id="statCd">1.4s</span></div>
+    <div class="stat-item"><span>Lifesteal:</span><span class="stat-val" id="statVamp">0%</span></div>
+    <div class="stat-item"><span>Magnet:</span><span class="stat-val" id="statMag">0</span></div>
+    <div class="stat-item"><span>XP Boost:</span><span class="stat-val" id="statXp">1.0x</span></div>
+    <div class="stat-item"><span>Minions:</span><span class="stat-val" id="statMinions">0</span></div>
+    <div class="stat-item"><span>Shockwave:</span><span class="stat-val" id="statWave">-</span></div>
   </div>
 </div>
 
 <div id="killBanner"></div>
 <button id="pauseBtn">⏸</button>
-<div id="board"><h3>Leaderboard</h3><div id="rows"></div></div>
+<div id="board"><h3>LEADERBOARD</h3><div id="rows"></div></div>
 
 <div id="respawn"><div class="box">
-  <div id="deathMsg" style="font-size:17px;font-weight:700;margin-bottom:6px;">You were eaten!</div>
-  <div style="color:var(--sub);font-size:13px;margin-bottom:4px;">Final level: <b id="finalLvl" style="color:var(--text)"></b></div>
-  <div style="color:var(--accent);font-size:12px;margin-bottom:6px;">🌟 Kept XP: <b id="retainedXpText">0</b> (Respawn at Lv <span id="retainedLvlText">1</span>)</div>
-  <button id="respawnBtn">Respawn with Kept XP</button>
+  <div id="deathMsg" style="font-size:18px;font-weight:900;color:var(--accent2);margin-bottom:8px;">HULL BREACHED!</div>
+  <div style="color:var(--sub);font-size:13px;margin-bottom:6px;">Final Level: <b id="finalLvl" style="color:#fff"></b></div>
+  <div style="color:var(--neon);font-size:13px;margin-bottom:8px;font-weight:700;">🌟 Salvaged XP: <b id="retainedXpText">0</b> (Respawn at Lv <span id="retainedLvlText">1</span>)</div>
+  <button id="respawnBtn">REDEPLOY WITH SALVAGED XP</button>
 </div></div>
 
 <div id="upgradeOverlay"><div class="box">
-  <div class="hdr">🎉 Level up! Pick one:</div>
+  <div class="hdr">🎉 MODULE UPGRADE! CHOOSE ONE:</div>
   <div id="upgradeCards"></div>
 </div></div>
 
 <div id="pauseOverlay"><div class="box">
-  <div style="font-size:18px;margin-bottom:6px;">⏸ Paused</div>
-  <div style="color:var(--sub);font-size:12px;line-height:1.4;">Your controls are frozen.<br><b style="color:#ff6b6b">⚠️ Warning:</b> You can still be hit and take danger zone damage while paused!</div>
-  <button id="resumeBtn">Resume</button>
+  <div style="font-size:18px;margin-bottom:6px;font-weight:800;color:#fff;">⏸ SYSTEM PAUSED</div>
+  <div style="color:var(--sub);font-size:12px;line-height:1.5;">Steering is locked.<br><b style="color:#ff3366">⚠️ Active Arena:</b> Foes and danger zone can still damage you!</div>
+  <button id="resumeBtn">RESUME COMBAT</button>
 </div></div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-const COLORS=["#5ee1c8","#ff6b9d","#ffd166","#7aa2ff","#c084fc","#ff9f6b"];
+// Cyber Emerald & High-Tech Swatches
+const COLORS=["#00ff88","#00e5ff","#ff3366","#ffd166","#b388ff","#ff8800"];
 const cEl=document.getElementById('colors');
 let chosenColor=COLORS[0], drawColor=COLORS[0], hasDrawn=false;
 const editor=document.getElementById('editor'), ectx=editor.getContext('2d');
@@ -200,7 +331,7 @@ const HP_BASE=100, REGEN_DELAY=5500, REGEN_RATE=3;
 const VEL_FRICTION=0.91;   // ice-slide friction per frame
 const CENTER_DOT=7;         // hp/sec inside danger zone
 
-// Hard caps on stats
+// Hard caps on stats for balanced gameplay
 const MAX_HP_CAP = 300;     // Prevents unkillable tanks
 const MAX_DAMAGE_CAP = 85;  // Prevents one-shot kills
 
@@ -208,16 +339,47 @@ const MAX_DAMAGE_CAP = 85;  // Prevents one-shot kills
 function mulberry32(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 const rngA=mulberry32(42);
 let food=[];
-for(let i=0;i<OUTER_FOOD;i++){food.push({x:rngA()*WORLD,y:rngA()*WORLD,big:false,c:'hsl('+((i*63)%360)+',70%,60%)'});}
+for(let i=0;i<OUTER_FOOD;i++){food.push({x:rngA()*WORLD,y:rngA()*WORLD,big:false,c:'hsl('+((i*63)%360)+',85%,62%)'});}
 const rngB=mulberry32(777), FCX=WORLD/2, FCY=WORLD/2;
 for(let i=0;i<CENTER_FOOD;i++){
   const ang=rngB()*Math.PI*2, rad=Math.sqrt(rngB())*CENTER_RADIUS;
-  food.push({x:FCX+Math.cos(ang)*rad, y:FCY+Math.sin(ang)*rad, big:true, c:'#ffd166'});
+  food.push({x:FCX+Math.cos(ang)*rad, y:FCY+Math.sin(ang)*rad, big:true, c:'#00ff88'});
 }
 const eaten=new Set();
 
-// Visual effects array for ripples, particles, bursts
+// Visual effects & floating combat text arrays (capped for buttery smooth 60fps)
 let visualFx=[];
+let floatingTexts=[];
+
+function spawnDamageText(x, y, dmg, isCrit){
+  if(floatingTexts.length>24) floatingTexts.shift();
+  floatingTexts.push({
+    x: x + (Math.random()-0.5)*16,
+    y: y,
+    text: '-' + dmg + (isCrit?' CRIT!':''),
+    color: isCrit?'#ffd166':'#ff3366',
+    size: isCrit?16:12.5,
+    alpha: 1,
+    vy: -1.7
+  });
+}
+
+function spawnHitSparks(x, y, dirX, dirY, col){
+  for(let i=0; i<8; i++){
+    if(visualFx.length>50) visualFx.shift();
+    const speed = 3 + Math.random()*5;
+    const angle = Math.atan2(dirY, dirX) + (Math.random()-0.5)*1.5;
+    visualFx.push({
+      type: 'spark',
+      x, y,
+      vx: Math.cos(angle)*speed,
+      vy: Math.sin(angle)*speed,
+      alpha: 1,
+      color: col || '#00ff88',
+      size: 2 + Math.random()*2.5
+    });
+  }
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function levelFromXp(xp){
@@ -241,59 +403,58 @@ function freshStats(){
     berserkStacks:0,
     shockwaveLevel:0,
     shockwaveCooldownUntil:0, // internal 4s cooldown
-    shieldMaxCharges:0,       // Stacks up to 3!
+    shieldMaxCharges:0,       // Stacks up to 3
     shieldCharges:0,
     shieldCooldownMs:32000,
     shieldRechargeAt:0,
     orbiterCount:0,           // up to 4 minions
     orbiters:null,
-    // New upgrades
-    thorns:0,                 // reflected damage
-    adrenalineUntil:0,        // speed burst after being hit
+    thorns:0,                 // reflected spike damage
+    adrenalineUntil:0,
     adrenalineLevel:0,
-    executioner:0,            // +45% dmg vs low HP foes
+    executioner:0,            // bonus dmg vs low HP
     frostAura:false,          // slows nearby foes
     upgradeCounts:{},
   };
 }
 
-// ── Upgrade pool (Tiered, Balanced & Stackable) ─────────────────────────────
+// ── Upgrade pool (Tiered & Fully Stackable) ─────────────────────────────────
 const UPGRADE_POOL=[
-  // ── Tier 1 (Common) ──
-  {tier:1,id:'swift',      name:'Swift',        desc:'+15% movement speed',              icon:'⚡', apply:m=>m.speedMult*=1.15},
-  {tier:1,id:'magnet',     name:'Magnetism',    desc:'+60 pellet pull range',             icon:'🧲', apply:m=>m.magnet+=60},
-  {tier:1,id:'feast',      name:'Feast',        desc:'+30% XP from pellets & kills',      icon:'🍒', apply:m=>m.xpMult+=0.30},
-  {tier:1,id:'regen',      name:'Regeneration', desc:'+80% HP regeneration rate',         icon:'🌿', apply:m=>m.regenMult+=0.8},
-  {tier:1,id:'bulk',       name:'Bulk Up',      desc:'+10% size and mass',                icon:'💪', apply:m=>m.bulk+=0.10},
-  {tier:1,id:'spikes',     name:'Spikes',       desc:'Reflects 14 damage on collision',   icon:'🦔', apply:m=>m.thorns+=14},
-  {tier:1,id:'adrenaline', name:'Adrenaline',   desc:'+30% speed for 2s when damaged',   icon:'💉', apply:m=>m.adrenalineLevel=(m.adrenalineLevel||0)+1},
+  // ── Tier 1 ──
+  {tier:1,id:'swift',      name:'Swift Thrusters',desc:'+15% movement speed',              icon:'⚡', apply:m=>m.speedMult*=1.15},
+  {tier:1,id:'magnet',     name:'Magnetism',      desc:'+60 pellet pull range',             icon:'🧲', apply:m=>m.magnet+=60},
+  {tier:1,id:'feast',      name:'Feast Capacitor',desc:'+30% XP from pellets & kills',      icon:'🍒', apply:m=>m.xpMult+=0.30},
+  {tier:1,id:'regen',      name:'Regeneration',   desc:'+80% HP regeneration rate',         icon:'🌿', apply:m=>m.regenMult+=0.8},
+  {tier:1,id:'bulk',       name:'Bulk Armor',     desc:'+10% size and mass',                icon:'💪', apply:m=>m.bulk+=0.10},
+  {tier:1,id:'spikes',     name:'Razor Spikes',   desc:'Sharp outward spikes reflect 14 dmg',icon:'🦔', apply:m=>m.thorns+=14},
+  {tier:1,id:'adrenaline', name:'Adrenaline',     desc:'+30% speed for 2s when damaged',   icon:'💉', apply:m=>m.adrenalineLevel=(m.adrenalineLevel||0)+1},
 
   // ── Tier 2 (Unlocks Lv 3) ──
-  {tier:2,id:'fury',       name:'Fury',         desc:'-22% lunge cooldown',               icon:'🔥', apply:m=>m.lungeCdMult=Math.max(0.25,m.lungeCdMult*0.78)},
-  {tier:2,id:'power',      name:'Power Strike', desc:'+35% lunge strike damage',          icon:'💥', apply:m=>m.lungeDmgMult+=0.35},
-  {tier:2,id:'vitality',   name:'Vitality',     desc:'+40 max HP (capped at 300)',       icon:'❤️', apply:m=>{m.maxHpBonus+=40;m.hp=Math.min(m.hp+40,Math.min(MAX_HP_CAP,HP_BASE+m.maxHpBonus));}},
-  {tier:2,id:'vampire',    name:'Vampiric',     desc:'+20% lifesteal on lunge hits',      icon:'🧛', apply:m=>m.vampiric+=0.20},
-  {tier:2,id:'afterburn',  name:'Afterburner',  desc:'Launch distance (diminishing)',     icon:'🚀',
+  {tier:2,id:'fury',       name:'Overclock',      desc:'-22% lunge cooldown',               icon:'🔥', apply:m=>m.lungeCdMult=Math.max(0.25,m.lungeCdMult*0.78)},
+  {tier:2,id:'power',      name:'Plasma Strike',  desc:'+35% lunge strike damage',          icon:'💥', apply:m=>m.lungeDmgMult+=0.35},
+  {tier:2,id:'vitality',   name:'Hull Plating',   desc:'+40 max HP (capped at 300)',       icon:'❤️', apply:m=>{m.maxHpBonus+=40;m.hp=Math.min(m.hp+40,Math.min(MAX_HP_CAP,HP_BASE+m.maxHpBonus));}},
+  {tier:2,id:'vampire',    name:'Energy Syphon',  desc:'+20% lifesteal on lunge hits',      icon:'🧛', apply:m=>m.vampiric+=0.20},
+  {tier:2,id:'afterburn',  name:'Afterburner',    desc:'Launch distance (diminishing)',     icon:'🚀',
     maxStack:4, apply:m=>{
       const cur=me.upgradeCounts['afterburn']||0;
       const b=cur===0?0.35:cur===1?0.26:cur===2?0.12:0.06;
       m.lungeDurMult+=b;
     }},
-  {tier:2,id:'berserk',    name:'Berserk',      desc:'Below 40% HP: +30% speed & dmg',    icon:'😡', apply:m=>m.berserkStacks=(m.berserkStacks||0)+1},
-  {tier:2,id:'execute',    name:'Executioner',  desc:'+45% lunge dmg vs foes under 50% HP',icon:'🪓', apply:m=>m.executioner=(m.executioner||0)+0.45},
-  {tier:2,id:'frostaura',  name:'Frost Aura',   desc:'Enemies within 140px move 25% slower',icon:'❄️', apply:m=>m.frostAura=true},
+  {tier:2,id:'berserk',    name:'Berserk Protocol',desc:'Below 40% HP: +30% speed & dmg',  icon:'😡', apply:m=>m.berserkStacks=(m.berserkStacks||0)+1},
+  {tier:2,id:'execute',    name:'Executioner',    desc:'+45% strike dmg vs foes under 50% HP',icon:'🪓', apply:m=>m.executioner=(m.executioner||0)+0.45},
+  {tier:2,id:'frostaura',  name:'Cryo Field',     desc:'Enemies within 140px move 25% slower',icon:'❄️', apply:m=>m.frostAura=true},
 
-  // ── Tier 3 (Unlocks Lv 6 - Powerful & Tactical) ──
-  {tier:3,id:'minions',    name:'Minion',       desc:'+1 tough 75 HP defender (up to 4)', icon:'🫧',
+  // ── Tier 3 (Unlocks Lv 6) ──
+  {tier:3,id:'minions',    name:'Defense Drone',  desc:'+1 tough 75 HP drone (up to 4)',    icon:'🫧',
     maxStack:4, apply:m=>{ m.orbiterCount=Math.min(4,(m.orbiterCount||0)+1); m.orbiters=null; }},
-  {tier:3,id:'shield',     name:'Energy Shield',desc:'+1 shield charge (blocks 40 dmg, max 3)',icon:'🛡️',
+  {tier:3,id:'shield',     name:'Energy Barrier', desc:'+1 shield charge (blocks 40 dmg, max 3)',icon:'🛡️',
     maxStack:3, apply:m=>{
       m.shieldMaxCharges=Math.min(3,(m.shieldMaxCharges||0)+1);
       m.shieldCharges=m.shieldMaxCharges;
       m.shieldCooldownMs=Math.max(16000, 32000 - (m.shieldMaxCharges-1)*6000);
       m.shieldRechargeAt=0;
     }},
-  {tier:3,id:'shockwave',  name:'Shockwave',    desc:'Lunge emits tactical knockback (4s CD)',icon:'💫',
+  {tier:3,id:'shockwave',  name:'EMP Shockwave',  desc:'Lunge emits tactical knockback (4s CD)',icon:'💫',
     maxStack:3, apply:m=>m.shockwaveLevel=(m.shockwaveLevel||0)+1},
 ];
 
@@ -365,7 +526,7 @@ function checkUpgradeSteps(){
 let killTimer=null;
 function showKillBanner(victimName, xpAwarded){
   const el=document.getElementById('killBanner');
-  el.textContent=`☠️ KILLED ${victimName.toUpperCase()}! +${xpAwarded} XP`;
+  el.textContent=`☠️ TERMINATED ${victimName.toUpperCase()}! +${xpAwarded} XP`;
   el.style.display='block';
   if(killTimer) clearTimeout(killTimer);
   killTimer=setTimeout(()=>{ el.style.display='none'; }, 2800);
@@ -382,7 +543,7 @@ let manualPaused=false, ownSkin=null, skinDataURL=null;
 function randSpawn(){return {x:100+Math.random()*(WORLD-200), y:100+Math.random()*(WORLD-200)};}
 
 document.getElementById('play').onclick=()=>{
-  const nm=(document.getElementById('name').value||'Blob').trim().slice(0,14);
+  const nm=(document.getElementById('name').value||'Pilot').trim().slice(0,14);
   const code=(lobbyInput.value||'ABCD').trim().toUpperCase().slice(0,6);
   const sp=randSpawn();
   me={x:sp.x,y:sp.y,xp:0,level:1,lastUpgradeLevel:0,upgradeStep:1,
@@ -406,7 +567,7 @@ document.getElementById('play').onclick=()=>{
 
 function updateLobbyTag(code){
   const n=Object.keys(peers).length;
-  document.getElementById('lobbyTagText').textContent=code+' ('+(n===0?'live — waiting for peers':n+' other player'+(n>1?'s':'')+' here')+')';
+  document.getElementById('lobbyTagText').textContent=code+' ('+(n===0?'live — waiting for peers':n+' other pilot'+(n>1?'s':'')+' online')+')';
 }
 
 // ── Networking ────────────────────────────────────────────────────────────
@@ -421,14 +582,13 @@ function setupNet(code){
     sendFx:d=>socket.emit('fx',d),
   };
   socket.on('connect',()=>{ socket.emit('join',code); updateLobbyTag(code); });
-  socket.on('connect_error',()=>{ document.getElementById('lobbyTagText').textContent=code+' (server waking up… retrying)'; });
+  socket.on('connect_error',()=>{ document.getElementById('lobbyTagText').textContent=code+' (connecting…)'; });
   socket.on('disconnect',()=>{ document.getElementById('lobbyTagText').textContent=code+' (reconnecting…)'; });
 
   socket.on('fx',data=>{
     visualFx.push(data);
   });
 
-  // Receive peer state (including shield, minions, thorns, frost, berserk!)
   socket.on('state',data=>{
     const prev=peers[data.id];
     let rx=data.x, ry=data.y;
@@ -477,6 +637,8 @@ function setupNet(code){
         });
         if(bestMinion && (bestDiff<1.4 || aliveMinions.length>=3)){
           bestMinion.hp-=data.dmg;
+          spawnHitSparks(bestMinion.x, bestMinion.y, -(data.kx||0), -(data.ky||0), '#ff3366');
+          spawnDamageText(bestMinion.x, bestMinion.y-10, Math.round(data.dmg), false);
           const mHitFx={type:'minionHit',x:bestMinion.x,y:bestMinion.y,r:14,alpha:1};
           visualFx.push(mHitFx); net&&net.sendFx(mHitFx);
           if(bestMinion.hp<=0){
@@ -485,7 +647,7 @@ function setupNet(code){
             const mPopFx={type:'minionPop',x:bestMinion.x,y:bestMinion.y,color:me.color};
             visualFx.push(mPopFx); net&&net.sendFx(mPopFx);
           }
-          return; // Minion body-blocked the hit!
+          return;
         }
       }
     }
@@ -506,10 +668,13 @@ function setupNet(code){
       net.sendHit({dmg:me.thorns, byName:me.name+' (spikes)', kx:-(data.kx||0)*0.5, ky:-(data.ky||0)*0.5}, data.from);
     }
 
-    // Adrenaline speed trigger
     if(me.adrenalineLevel>0){
       me.adrenalineUntil=performance.now()+2000;
     }
+
+    // Spawn damage number on local player
+    spawnDamageText(me.x, me.y-radiusFromLevel(me.level,me.bulk)-10, Math.round(data.dmg), false);
+    spawnHitSparks(me.x, me.y, -(data.kx||0), -(data.ky||0), '#ff3366');
 
     me.hp=Math.max(0,me.hp-data.dmg);
     me.lastDamage=performance.now();
@@ -523,10 +688,9 @@ function setupNet(code){
       document.getElementById('finalLvl').textContent=me.level;
       document.getElementById('retainedXpText').textContent=retainedXp;
       document.getElementById('retainedLvlText').textContent=retainedLvl;
-      document.getElementById('deathMsg').textContent=(data.byName||'Someone')+' finished you off!';
+      document.getElementById('deathMsg').textContent=(data.byName||'Someone')+' vaporized you!';
       document.getElementById('respawn').style.display='flex';
 
-      // Send victim stats so killer gets scaled bounty!
       net.sendKilled({victimXp:me.xp, victimName:me.name, victimLevel:me.level}, data.from);
     }
   });
@@ -539,14 +703,11 @@ function setupNet(code){
 
     let bounty=0;
     if(victimXp>=600 || victimLvl>=myLvl){
-      // Slaying high XP / high level player: huge % bounty + underdog bonus!
       const levelDiff=Math.max(0, victimLvl-myLvl);
       bounty=Math.round(victimXp*0.42 + 120 + levelDiff*110);
     } else if(victimLvl<myLvl-2){
-      // Slaying fresh spawns / low XP: minimal reward
       bounty=Math.max(15, Math.round(victimXp*0.12 + 15));
     } else {
-      // Even fight
       bounty=Math.max(60, Math.round(victimXp*0.30 + 50));
     }
 
@@ -587,7 +748,7 @@ function tryLunge(){
     const waveDmg=(7+me.level*0.75)*me.shockwaveLevel*me.lungeDmgMult;
     const waveKnock=65+me.shockwaveLevel*20;
 
-    const swFx={type:'shockwave',x:me.x,y:me.y,r:r,maxR:blastRadius,alpha:1,color:'#5ee1c8'};
+    const swFx={type:'shockwave',x:me.x,y:me.y,r:r,maxR:blastRadius,alpha:1,color:'#00ff88'};
     visualFx.push(swFx);
     net&&net.sendFx(swFx);
 
@@ -596,6 +757,8 @@ function tryLunge(){
       const pd=Math.hypot(p.rx-me.x,p.ry-me.y);
       if(pd<blastRadius){
         const ex=(p.rx-me.x)/(pd||1), ey=(p.ry-me.y)/(pd||1);
+        spawnDamageText(p.rx, p.ry-20, Math.round(waveDmg), false);
+        spawnHitSparks(p.rx, p.ry, ex, ey, '#00ff88');
         net&&net.sendHit({dmg:waveDmg,byName:me.name+' (shockwave)',kx:ex*waveKnock,ky:ey*waveKnock},id);
         if(peers[id]){peers[id].vkx=(peers[id].vkx||0)+ex*waveKnock*0.8;peers[id].vky=(peers[id].vky||0)+ey*waveKnock*0.8;}
       }
@@ -605,6 +768,8 @@ function tryLunge(){
       const bd=Math.hypot(b.rx-me.x,b.ry-me.y);
       if(bd<blastRadius){
         const ex=(b.rx-me.x)/(bd||1), ey=(b.ry-me.y)/(bd||1);
+        spawnDamageText(b.rx, b.ry-20, Math.round(waveDmg), false);
+        spawnHitSparks(b.rx, b.ry, ex, ey, '#00ff88');
         net&&net.sendHit({dmg:waveDmg,byName:me.name+' (shockwave)',kx:ex*waveKnock,ky:ey*waveKnock},id);
         if(bots[id]){bots[id].vkx=(bots[id].vkx||0)+ex*waveKnock*0.5;bots[id].vky=(bots[id].vky||0)+ey*waveKnock*0.5;}
       }
@@ -653,7 +818,7 @@ addEventListener('keydown',e=>{
 });
 document.addEventListener('visibilitychange',()=>{ if(document.hidden&&alive) setManualPaused(true); });
 
-// ── Main Loop ─────────────────────────────────────────────────────────────
+// ── Main Loop (Optimized for Pure 60 FPS) ──────────────────────────────────
 let lastPresence=0;
 function loop(t){
   requestAnimationFrame(loop);
@@ -680,7 +845,7 @@ function loop(t){
         document.getElementById('finalLvl').textContent=me.level;
         document.getElementById('retainedXpText').textContent=retainedXp;
         document.getElementById('retainedLvlText').textContent=retainedLvl;
-        document.getElementById('deathMsg').textContent='The danger zone consumed you!';
+        document.getElementById('deathMsg').textContent='The danger zone consumed your core!';
         document.getElementById('respawn').style.display='flex';
       }
     }
@@ -690,7 +855,7 @@ function loop(t){
       me.hp=Math.min(maxHpTotal,me.hp+REGEN_RATE*me.regenMult/60);
     }
 
-    // Ice physics
+    // Ice sliding physics
     me.kx*=VEL_FRICTION; me.ky*=VEL_FRICTION;
 
     if(!manualPaused){
@@ -782,6 +947,8 @@ function loop(t){
             const od=Math.hypot(p.rx-orb.x,p.ry-orb.y);
             if(od<pr+orbR){
               net&&net.sendHit({dmg:14,byName:me.name+' (minion)',kx:(p.rx-orb.x)/(od||1)*18,ky:(p.ry-orb.y)/(od||1)*18},id);
+              spawnHitSparks(p.rx, p.ry, (p.rx-orb.x)/(od||1), (p.ry-orb.y)/(od||1), '#00ff88');
+              spawnDamageText(p.rx, p.ry-pr, 14, false);
               orb.hp-=15;
               orb.dmgCooldown=now+650;
               hit=true;
@@ -794,6 +961,8 @@ function loop(t){
             const od=Math.hypot(b.rx-orb.x,b.ry-orb.y);
             if(od<br+orbR){
               net&&net.sendHit({dmg:14,byName:me.name+' (minion)',kx:(b.rx-orb.x)/(od||1)*18,ky:(b.ry-orb.y)/(od||1)*18},id);
+              spawnHitSparks(b.rx, b.ry, (b.rx-orb.x)/(od||1), (b.ry-orb.y)/(od||1), '#00ff88');
+              spawnDamageText(b.rx, b.ry-br, 14, false);
               orb.hp-=15;
               orb.dmgCooldown=now+650;
               hit=true;
@@ -824,10 +993,16 @@ function loop(t){
         if(pd<r+pr){
           me.hitSet.add(id);
           let finalDmg=baseDmg;
+          let isCrit=false;
           if(me.executioner>0 && p.hp!=null && p.maxHp && (p.hp/p.maxHp)<0.50){
             finalDmg=Math.min(MAX_DAMAGE_CAP, finalDmg*(1+me.executioner));
+            isCrit=true;
           }
           const dx=(p.rx-me.x)/(pd||1), dy=(p.ry-me.y)/(pd||1);
+
+          spawnHitSparks(p.rx, p.ry, dx, dy, '#00ff88');
+          spawnDamageText(p.rx, p.ry-pr-10, Math.round(finalDmg), isCrit);
+
           net&&net.sendHit({dmg:finalDmg,byName:me.name,kx:dx*KNOCK,ky:dy*KNOCK},id);
           if(peers[id]){peers[id].vkx=(peers[id].vkx||0)+dx*KNOCK*0.8;peers[id].vky=(peers[id].vky||0)+dy*KNOCK*0.8;}
           if(me.vampiric) me.hp=Math.min(maxHpTotal,me.hp+finalDmg*me.vampiric);
@@ -840,10 +1015,16 @@ function loop(t){
         if(bd<r+br){
           me.hitSet.add(id);
           let finalDmg=baseDmg;
+          let isCrit=false;
           if(me.executioner>0 && (b.hp/b.maxHp)<0.50){
             finalDmg=Math.min(MAX_DAMAGE_CAP, finalDmg*(1+me.executioner));
+            isCrit=true;
           }
           const dx=(b.rx-me.x)/(bd||1), dy=(b.ry-me.y)/(bd||1);
+
+          spawnHitSparks(b.rx, b.ry, dx, dy, '#00ff88');
+          spawnDamageText(b.rx, b.ry-br-10, Math.round(finalDmg), isCrit);
+
           net&&net.sendHit({dmg:finalDmg,byName:me.name,kx:dx*KNOCK,ky:dy*KNOCK},id);
           if(bots[id]){bots[id].vkx=(bots[id].vkx||0)+dx*KNOCK*0.5;bots[id].vky=(bots[id].vky||0)+dy*KNOCK*0.5;}
           if(me.vampiric) me.hp=Math.min(maxHpTotal,me.hp+finalDmg*me.vampiric);
@@ -859,6 +1040,8 @@ function loop(t){
           const push=(minD-d)*0.5; me.x+=(dx/d)*push; me.y+=(dy/d)*push;
           if(me.thorns>0 && Math.random()<0.08){
             net&&net.sendHit({dmg:me.thorns*0.4,byName:me.name+' (spikes)'},id);
+            spawnHitSparks(p.rx, p.ry, -dx, -dy, '#ff3366');
+            spawnDamageText(p.rx, p.ry-pr, Math.round(me.thorns*0.4), false);
           }
         }
       }
@@ -870,13 +1053,15 @@ function loop(t){
           const push=(minD-d)*0.5; me.x+=(dx/d)*push; me.y+=(dy/d)*push;
           if(me.thorns>0 && Math.random()<0.08){
             net&&net.sendHit({dmg:me.thorns*0.4,byName:me.name+' (spikes)'},id);
+            spawnHitSparks(b.rx, b.ry, -dx, -dy, '#ff3366');
+            spawnDamageText(b.rx, b.ry-br, Math.round(me.thorns*0.4), false);
           }
         }
       }
       me.x=Math.min(WORLD,Math.max(0,me.x)); me.y=Math.min(WORLD,Math.max(0,me.y));
     }
 
-    // Broadcast state including shield charges and minions count for other players!
+    // Broadcast state
     if(t-lastPresence>55){
       lastPresence=t;
       net&&net.sendState({
@@ -895,7 +1080,7 @@ function loop(t){
     const cdRemaining=Math.max(0,me.lungeCooldownUntil-now);
     const xpPct=Math.round(xpProgress(me.xp)*100);
     document.getElementById('lvlText').textContent='Lv '+me.level;
-    document.getElementById('xpText').textContent=me.xp+' xp';
+    document.getElementById('xpText').textContent=me.xp+' XP';
     document.getElementById('xpPctText').textContent=xpPct+'%';
     document.getElementById('xpfill').style.width=xpPct+'%';
     document.getElementById('hpfill').style.width=(me.hp/maxHpTotal*100)+'%';
@@ -925,16 +1110,16 @@ function loop(t){
       shRow.style.display='block';
       if(me.shieldCharges>0){
         shRow.textContent=`🛡️ Shield: ${me.shieldCharges}/${me.shieldMaxCharges} ready`;
-        shRow.style.color='#5ee1c8';
+        shRow.style.color='#00ff88';
       } else {
         const inCombat=now-me.lastDamage<=REGEN_DELAY;
         if(inCombat){
-          shRow.textContent='🛡️ Recharging (out of combat only)';
+          shRow.textContent='🛡️ Shield: Recharging (out of combat)';
           shRow.style.color='#ff9f6b';
         } else {
           const rem=Math.max(0,me.shieldRechargeAt-now);
-          shRow.textContent=`🛡️ Recharging (${Math.ceil(rem/1000)}s)`;
-          shRow.style.color='#8b93b8';
+          shRow.textContent=`🛡️ Shield: Recharging (${Math.ceil(rem/1000)}s)`;
+          shRow.style.color='#8b949e';
         }
       }
     } else shRow.style.display='none';
@@ -956,49 +1141,96 @@ function loop(t){
   updateBoard();
 }
 
-// ── Rendering ─────────────────────────────────────────────────────────────
+// ── Rendering & Visuals (Cyberpunk Audio Synth Styling) ────────────────────
+function drawRealSpikes(x, y, r, count=12){
+  const spikeLen = Math.max(6, r * 0.32);
+  const rot = Date.now() * 0.0015;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rot);
+
+  for(let i=0; i<count; i++){
+    const ang = (i / count) * Math.PI * 2;
+    const halfBase = (Math.PI / count) * 0.40;
+    const cos1 = Math.cos(ang - halfBase), sin1 = Math.sin(ang - halfBase);
+    const cos2 = Math.cos(ang + halfBase), sin2 = Math.sin(ang + halfBase);
+    const tipCos = Math.cos(ang), tipSin = Math.sin(ang);
+    const tipDist = r + spikeLen;
+
+    ctx.beginPath();
+    ctx.moveTo(cos1 * r, sin1 * r);
+    ctx.lineTo(tipCos * tipDist, tipSin * tipDist);
+    ctx.lineTo(cos2 * r, sin2 * r);
+    ctx.closePath();
+
+    ctx.fillStyle = '#ff2a6d';
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 function draw(){
-  ctx.fillStyle='#0b1020'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  // Matte dark brushed canvas
+  ctx.fillStyle='#090c10'; ctx.fillRect(0,0,canvas.width,canvas.height);
   const camX=(me?me.x:WORLD/2)-canvas.width/2, camY=(me?me.y:WORLD/2)-canvas.height/2;
   ctx.save(); ctx.translate(-camX,-camY);
 
-  // Grid
-  ctx.strokeStyle='#161d33'; ctx.lineWidth=1;
+  // Modern grid lines
+  ctx.strokeStyle='#131922'; ctx.lineWidth=1;
   for(let x=0;x<=WORLD;x+=80){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,WORLD);ctx.stroke();}
   for(let y=0;y<=WORLD;y+=80){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WORLD,y);ctx.stroke();}
+
+  // Glowing Arena Outer Boundary
+  ctx.strokeStyle='rgba(0,255,136,0.35)'; ctx.lineWidth=3;
   ctx.strokeRect(0,0,WORLD,WORLD);
 
-  // Danger zone
+  // Danger zone — pulsing neon red/crimson core
   const pulse=Math.sin(Date.now()*0.003)*0.5+0.5;
   ctx.beginPath(); ctx.arc(FCX,FCY,CENTER_RADIUS,0,Math.PI*2);
-  ctx.fillStyle=`rgba(220,40,40,${0.04+pulse*0.05})`; ctx.fill();
-  ctx.strokeStyle=`rgba(255,70,70,${0.35+pulse*0.45})`; ctx.lineWidth=3+pulse*3; ctx.stroke();
-  ctx.fillStyle=`rgba(255,110,90,${0.45+pulse*0.35})`;
-  ctx.font='bold 13px sans-serif'; ctx.textAlign='center';
+  ctx.fillStyle=`rgba(255,40,70,${0.04+pulse*0.05})`; ctx.fill();
+  ctx.strokeStyle=`rgba(255,51,102,${0.4+pulse*0.45})`; ctx.lineWidth=3+pulse*2; ctx.stroke();
+  ctx.fillStyle=`rgba(255,100,130,${0.5+pulse*0.35})`;
+  ctx.font='900 13px sans-serif'; ctx.textAlign='center';
   ctx.fillText('☠ DANGER ZONE',FCX,FCY-CENTER_RADIUS+22);
 
-  // Food
+  // Food pellets (Cyber energy cores)
   for(let i=0;i<food.length;i++){
     if(eaten.has(i))continue;
     const f=food[i];
     ctx.fillStyle=f.c; ctx.beginPath(); ctx.arc(f.x,f.y,f.big?7:4,0,Math.PI*2); ctx.fill();
-    if(f.big){ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=1.5;ctx.stroke();}
+    if(f.big){
+      ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=1.5; ctx.stroke();
+      ctx.beginPath(); ctx.arc(f.x,f.y,10,0,Math.PI*2);
+      ctx.strokeStyle='rgba(0,255,136,0.25)'; ctx.lineWidth=1; ctx.stroke();
+    }
   }
 
-  // Visual Effects
-  const now=performance.now();
+  // Visual Effects (Sparks, Shockwaves, Shield Breaks, Minion Pops)
   for(let i=visualFx.length-1;i>=0;i--){
     const fx=visualFx[i];
     if(fx.type==='shockwave'){
       fx.r+=(fx.maxR-fx.r)*0.18;
       fx.alpha*=0.91;
       ctx.beginPath(); ctx.arc(fx.x,fx.y,fx.r,0,Math.PI*2);
-      ctx.strokeStyle=`rgba(94,225,200,${fx.alpha*0.85})`; ctx.lineWidth=4*fx.alpha+1; ctx.stroke();
+      ctx.strokeStyle=`rgba(0,255,136,${fx.alpha*0.85})`; ctx.lineWidth=4*fx.alpha+1; ctx.stroke();
       if(fx.alpha<0.04) visualFx.splice(i,1);
     } else if(fx.type==='shieldBreak'){
-      fx.r+=2; fx.alpha*=0.88;
+      fx.r+=2.2; fx.alpha*=0.88;
       ctx.beginPath(); ctx.arc(fx.x,fx.y,fx.r,0,Math.PI*2);
-      ctx.strokeStyle=`rgba(94,225,200,${fx.alpha})`; ctx.lineWidth=2.5; ctx.stroke();
+      ctx.strokeStyle=`rgba(0,255,136,${fx.alpha})`; ctx.lineWidth=2.5; ctx.stroke();
+      if(fx.alpha<0.05) visualFx.splice(i,1);
+    } else if(fx.type==='spark'){
+      fx.x+=fx.vx; fx.y+=fx.vy;
+      fx.vx*=0.92; fx.vy*=0.92;
+      fx.alpha*=0.89;
+      ctx.beginPath(); ctx.arc(fx.x,fx.y,fx.size||2.5,0,Math.PI*2);
+      ctx.fillStyle=fx.color||'#00ff88';
+      ctx.globalAlpha=Math.max(0, fx.alpha);
+      ctx.fill();
+      ctx.globalAlpha=1;
       if(fx.alpha<0.05) visualFx.splice(i,1);
     } else if(fx.type==='minionHit'){
       fx.r+=1.5; fx.alpha*=0.85;
@@ -1015,24 +1247,24 @@ function draw(){
       }
       let anyAlive=false;
       fx.sparks.forEach(s=>{
-        s.x+=s.vx; s.y+=s.vy; s.alpha*=0.90;
+        s.x+=s.vx; s.y+=s.vy; s.alpha*=0.89;
         if(s.alpha>0.05){
           anyAlive=true;
           ctx.beginPath(); ctx.arc(s.x,s.y,3,0,Math.PI*2);
-          ctx.fillStyle=`rgba(94,225,200,${s.alpha})`; ctx.fill();
+          ctx.fillStyle=`rgba(0,255,136,${s.alpha})`; ctx.fill();
         }
       });
       if(!anyAlive) visualFx.splice(i,1);
     }
   }
 
-  // Draw Peers (now including their shields & minions!)
+  // Draw Peers
   for(const id in peers){
     const p=peers[id]; if(!p)continue;
     const skin=peerSkins[id]&&peerSkins[id].img;
     const pr=radiusFromLevel(p.level||1,p.bulk||0);
 
-    // Draw Peer's minions if they have any
+    // Draw Peer's minions
     if(p.minions>0){
       const pOrbR=pr*0.42;
       const pOrbitR=pr*2.35;
@@ -1047,39 +1279,37 @@ function draw(){
       }
     }
 
+    // Draw Peer's Sharp Spikes if active
+    if(p.thorns>0){
+      drawRealSpikes(p.rx, p.ry, pr, 12);
+    }
+
     // Draw Peer's blob
     drawBlob(p.rx,p.ry,pr,p.color||'#888',p.name||'?',p.level||1,
       (p.hp!=null&&p.maxHp)?p.hp/p.maxHp:null,skin&&skin.complete?skin:null);
 
-    // Draw Peer's shield rings if they have active charges
+    // Draw Peer's shield rings
     if(p.shield>0){
       for(let s=0;s<p.shield;s++){
         ctx.beginPath(); ctx.arc(p.rx,p.ry,pr+8+s*5,0,Math.PI*2);
-        ctx.strokeStyle=`rgba(94,225,200,${0.85-s*0.2})`; ctx.lineWidth=2.5;
+        ctx.strokeStyle=`rgba(0,255,136,${0.85-s*0.2})`; ctx.lineWidth=2.5;
         ctx.setLineDash([7,5]); ctx.stroke(); ctx.setLineDash([]);
       }
-    }
-
-    // Draw Peer's Spikes
-    if(p.thorns>0){
-      ctx.beginPath(); ctx.arc(p.rx,p.ry,pr+3,0,Math.PI*2);
-      ctx.strokeStyle='rgba(255,107,157,0.7)'; ctx.lineWidth=2;
-      ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
     }
 
     // Draw Peer's Frost Aura
     if(p.frost>0){
       const frostPulse=0.4+0.2*Math.sin(Date.now()*0.004);
       ctx.beginPath(); ctx.arc(p.rx,p.ry,pr+18,0,Math.PI*2);
-      ctx.strokeStyle=`rgba(122,162,255,${frostPulse})`; ctx.lineWidth=3;
+      ctx.strokeStyle=`rgba(0,229,255,${frostPulse})`; ctx.lineWidth=2.5;
       ctx.setLineDash([8,6]); ctx.stroke(); ctx.setLineDash([]);
     }
 
-    // Draw Peer's Berserk Fire
+    // Draw Peer's Berserk Flame
     if(p.berserk>0){
       const firePulse=0.5+0.35*Math.sin(Date.now()*0.008);
       ctx.beginPath(); ctx.arc(p.rx,p.ry,pr+5,0,Math.PI*2);
-      ctx.strokeStyle=`rgba(255,80,30,${firePulse})`; ctx.lineWidth=3;
+      ctx.strokeStyle=`rgba(255,60,20,${firePulse})`; ctx.lineWidth=3;
       ctx.stroke();
     }
   }
@@ -1094,11 +1324,11 @@ function draw(){
   if(me&&alive&&me.orbiters){
     const r=radiusFromLevel(me.level,me.bulk);
     const orbR=r*0.42;
+    const now=performance.now();
     me.orbiters.forEach(orb=>{
       if(now<orb.respawnAt){
-        // Ghost placeholder showing respawn progress
         ctx.beginPath(); ctx.arc(orb.x,orb.y,orbR,0,Math.PI*2);
-        ctx.strokeStyle='rgba(255,255,255,0.18)'; ctx.lineWidth=1.5;
+        ctx.strokeStyle='rgba(0,255,136,0.2)'; ctx.lineWidth=1.5;
         ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
         return;
       }
@@ -1110,9 +1340,9 @@ function draw(){
 
       // Minion mini HP bar (out of 75 max HP)
       const hpFrac=Math.max(0,orb.hp/orb.maxHp);
-      ctx.fillStyle='rgba(0,0,0,0.5)';
+      ctx.fillStyle='rgba(0,0,0,0.6)';
       ctx.fillRect(orb.x-orbR, orb.y-orbR-6, orbR*2, 3.5);
-      ctx.fillStyle=hpFrac>0.35?'#5ee1c8':'#ff6b6b';
+      ctx.fillStyle=hpFrac>0.35?'#00ff88':'#ff3366';
       ctx.fillRect(orb.x-orbR, orb.y-orbR-6, orbR*2*hpFrac, 3.5);
     });
   }
@@ -1120,29 +1350,28 @@ function draw(){
   // Local Player
   if(me&&alive){
     const r=radiusFromLevel(me.level,me.bulk);
+
+    // Draw Sharp Protruding Spikes if active
+    if(me.thorns>0){
+      drawRealSpikes(me.x, me.y, r, 12);
+    }
+
     drawBlob(me.x,me.y,r,me.color,me.name+' (you)',me.level,me.hp/(Math.min(MAX_HP_CAP,HP_BASE+me.maxHpBonus)),ownSkin&&ownSkin.complete?ownSkin:null);
 
-    // Shield rings (stacked visually!)
+    // Shield rings
     if(me.shieldCharges>0){
       for(let s=0;s<me.shieldCharges;s++){
         ctx.beginPath(); ctx.arc(me.x,me.y,r+8+s*5,0,Math.PI*2);
-        ctx.strokeStyle=`rgba(94,225,200,${0.85-s*0.2})`; ctx.lineWidth=2.5;
+        ctx.strokeStyle=`rgba(0,255,136,${0.85-s*0.2})`; ctx.lineWidth=2.5;
         ctx.setLineDash([7,5]); ctx.stroke(); ctx.setLineDash([]);
       }
-    }
-
-    // Spikes outline
-    if(me.thorns>0){
-      ctx.beginPath(); ctx.arc(me.x,me.y,r+3,0,Math.PI*2);
-      ctx.strokeStyle='rgba(255,107,157,0.7)'; ctx.lineWidth=2;
-      ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
     }
 
     // Frost Aura
     if(me.frostAura){
       const frostPulse=0.4+0.2*Math.sin(Date.now()*0.004);
       ctx.beginPath(); ctx.arc(me.x,me.y,r+18,0,Math.PI*2);
-      ctx.strokeStyle=`rgba(122,162,255,${frostPulse})`; ctx.lineWidth=3;
+      ctx.strokeStyle=`rgba(0,229,255,${frostPulse})`; ctx.lineWidth=2.5;
       ctx.setLineDash([8,6]); ctx.stroke(); ctx.setLineDash([]);
     }
 
@@ -1150,9 +1379,24 @@ function draw(){
     if(me.berserkStacks>0 && (me.hp/(Math.min(MAX_HP_CAP,HP_BASE+me.maxHpBonus)))<0.40){
       const firePulse=0.5+0.35*Math.sin(Date.now()*0.008);
       ctx.beginPath(); ctx.arc(me.x,me.y,r+5,0,Math.PI*2);
-      ctx.strokeStyle=`rgba(255,80,30,${firePulse})`; ctx.lineWidth=3;
+      ctx.strokeStyle=`rgba(255,60,20,${firePulse})`; ctx.lineWidth=3;
       ctx.stroke();
     }
+  }
+
+  // Floating Combat Damage Numbers
+  for(let i=floatingTexts.length-1; i>=0; i--){
+    const ft=floatingTexts[i];
+    ft.y += ft.vy;
+    ft.alpha -= 0.022;
+    ctx.save();
+    ctx.font=`900 ${ft.size}px -apple-system, sans-serif`;
+    ctx.fillStyle=ft.color;
+    ctx.globalAlpha=Math.max(0, ft.alpha);
+    ctx.textAlign='center';
+    ctx.fillText(ft.text, ft.x, ft.y);
+    ctx.restore();
+    if(ft.alpha<=0.04) floatingTexts.splice(i,1);
   }
 
   ctx.restore();
@@ -1163,7 +1407,7 @@ function draw(){
     if(distC<CENTER_RADIUS){
       const vp=0.3+0.3*Math.sin(Date.now()*0.005);
       const grad=ctx.createRadialGradient(canvas.width/2,canvas.height/2,canvas.width*0.2,canvas.width/2,canvas.height/2,canvas.width*0.72);
-      grad.addColorStop(0,'rgba(200,0,0,0)'); grad.addColorStop(1,`rgba(200,0,0,${vp})`);
+      grad.addColorStop(0,'rgba(255,20,50,0)'); grad.addColorStop(1,`rgba(255,20,50,${vp})`);
       ctx.fillStyle=grad; ctx.fillRect(0,0,canvas.width,canvas.height);
     }
   }
@@ -1174,14 +1418,23 @@ function drawBlob(x,y,r,color,name,level,hpFrac,skinImg){
   if(skinImg){ctx.imageSmoothingEnabled=false;ctx.drawImage(skinImg,x-r,y-r,r*2,r*2);}
   else{ctx.fillStyle=color;ctx.fillRect(x-r,y-r,r*2,r*2);}
   ctx.restore();
-  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.lineWidth=2; ctx.strokeStyle='rgba(0,0,0,.3)'; ctx.stroke();
+
+  // Outer bezel / hardware rim
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.lineWidth=2.5; ctx.strokeStyle='rgba(0,0,0,0.5)'; ctx.stroke();
+  ctx.beginPath(); ctx.arc(x,y,r+1,0,Math.PI*2); ctx.lineWidth=1; ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.stroke();
+
   if(name){
-    ctx.fillStyle='#0a0a12'; ctx.font='bold '+Math.max(10,r*0.4)+'px sans-serif'; ctx.textAlign='center';
+    ctx.fillStyle='#ffffff';
+    ctx.font='900 '+Math.max(10.5,r*0.38)+'px -apple-system, sans-serif';
+    ctx.textAlign='center';
+    ctx.shadowColor='rgba(0,0,0,0.8)'; ctx.shadowBlur=3;
     ctx.fillText(name+(level?' L'+level:''),x,y+4);
+    ctx.shadowBlur=0;
   }
   if(hpFrac!=null){
-    ctx.fillStyle='rgba(0,0,0,.4)'; ctx.fillRect(x-r,y-r-10,r*2,5);
-    ctx.fillStyle=hpFrac>0.3?'#5ee89a':'#ff6b6b'; ctx.fillRect(x-r,y-r-10,r*2*Math.max(0,hpFrac),5);
+    ctx.fillStyle='rgba(11,15,20,0.8)'; ctx.fillRect(x-r,y-r-11,r*2,5.5);
+    ctx.strokeStyle='rgba(255,255,255,0.1)'; ctx.lineWidth=1; ctx.strokeRect(x-r,y-r-11,r*2,5.5);
+    ctx.fillStyle=hpFrac>0.35?'#00ff88':'#ff3366'; ctx.fillRect(x-r,y-r-11,r*2*Math.max(0,hpFrac),5.5);
   }
 }
 
@@ -1190,7 +1443,7 @@ function updateBoard(){
     ...Object.values(peers).map(p=>({name:p.name||'?',level:p.level||1}))];
   all.sort((a,b)=>b.level-a.level);
   document.getElementById('rows').innerHTML=all.slice(0,6).map(p=>
-    `<div class="row"><span>${p.name}</span><span>Lv ${p.level}</span></div>`).join('');
+    `<div class="row"><span>${p.name}</span><span style="color:var(--neon)">Lv ${p.level}</span></div>`).join('');
 }
 </script>
 </body>
