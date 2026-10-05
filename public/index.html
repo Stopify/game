@@ -228,8 +228,13 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 .t2 .tier-badge{background:#0d2b33;color:var(--neon-cyan);}
 .t3 .tier-badge{background:#332b0d;color:var(--gold);}
 .t4 .tier-badge{background:#38121f;color:#ff8ca8;}
-.tree-preview{display:block;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.1);font-size:8.5px;color:var(--neon-cyan);line-height:1.35;font-weight:700;}
+.tree-preview{display:none;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.1);font-size:8.5px;color:var(--neon-cyan);line-height:1.35;font-weight:700;}
 .upcard:hover .tree-preview,.upcard:focus .tree-preview{display:block;}
+.upgrade-stats{display:grid;gap:4px;margin-top:6px;}
+.upgrade-stat{display:grid;grid-template-columns:54px 1fr 42px;gap:5px;align-items:center;color:var(--sub);font-size:8px;font-weight:800;}
+.upgrade-stat-bar{height:5px;border-radius:4px;background:#080b10;overflow:hidden;}
+.upgrade-stat-bar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--neon-cyan),var(--neon));}
+.upgrade-stat-value{text-align:right;color:#fff;}
 .t3 .tier-badge{background:#332900;color:var(--gold);}
 .stack-badge{font-size:8.5px;background:rgba(0,255,136,0.14);border:1px solid rgba(0,255,136,0.3);padding:1px 5px;border-radius:4px;color:var(--neon);font-weight:800;}
 .key-badge{font-size:9.5px;background:#1a2332;border:1px solid rgba(0,255,136,0.35);padding:1px 5px;border-radius:4px;color:var(--neon);font-weight:900;font-family:monospace;margin-right:6px;}
@@ -296,7 +301,6 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
     <div class="stat-item"><span>XP Boost:</span><span class="stat-val" id="statXp">1.0x</span></div>
     <div class="stat-item"><span>Minions:</span><span class="stat-val" id="statMinions">0</span></div>
     <div class="stat-item"><span>Shockwave:</span><span class="stat-val" id="statWave">-</span></div>
-    <div class="stat-item"><span>Spikes:</span><span class="stat-val" id="statSpikes">-</span></div>
     <div class="stat-item"><span>Regen:</span><span class="stat-val" id="statRegen">3.0/s</span></div>
   </div>
 </div>
@@ -397,7 +401,7 @@ document.getElementById('randomLobby').onclick=()=>{lobbyInput.value=randCode();
 // ── Constants & Caps ───────────────────────────────────────────────────────
 const WORLD=3600, OUTER_FOOD=300, CENTER_FOOD=70, CENTER_RADIUS=520;
 const BASE_SPEED=2.3, DASH_SPEED=10.5, DASH_DURATION=220, DASH_ENDLAG=280, DASH_COOLDOWN=1400, KNOCK=44;
-const HP_BASE=100, REGEN_DELAY=5500, REGEN_RATE=3;
+const HP_BASE=100, REGEN_DELAY=7000, REGEN_RATE=1.25;
 const VEL_FRICTION=0.91;   // ice-slide friction per frame
 const CENTER_DOT=7;         // hp/sec inside danger zone
 
@@ -480,14 +484,13 @@ function freshStats(){
     shieldRechargeAt:0,
     minionCount:0,           // up to 4 minions
     minionList:null,
-    spikes:0,                 // reflected spike damage
     adrenalineUntil:0,
     adrenalineLevel:0,
     executioner:0,            // bonus dmg vs low HP
     frostAura:false,          // slows nearby foes
     upgradeCounts:{},
-    dmgReduction:0, killHeal:0, pelletHeal:0, killRush:false, spikeHeal:0,
-    shieldBlast:false, spikeDash:false, knockMult:1, knockResist:1,
+    dmgReduction:0, killHeal:0, killRush:false,
+    shieldBlast:false, knockMult:1, knockResist:1,
     minionDmgBonus:0, minionHpBonus:0, minionBoost:1, orbitBase:0,
   };
 }
@@ -518,7 +521,7 @@ const UPGRADE_POOL=[
   // GROWTH
   {tier:1,id:'magnet',path:'Growth',name:'Magnet',desc:'+60 pellet pull range',icon:'🧲',maxStack:3,apply:m=>m.magnet+=60},
   {tier:2,id:'feast',path:'Growth',requires:['magnet'],minLevel:3,name:'XP Boost',desc:'+30% XP from pellets and kills',icon:'🍒',maxStack:3,apply:m=>m.xpMult+=0.30},
-  {tier:3,id:'snack',path:'Growth',requires:['feast'],minLevel:6,name:'Pellet Healing',desc:'Heal 2 HP for every pellet you eat',icon:'🍏',maxStack:3,apply:m=>m.pelletHeal+=2},
+  {tier:3,id:'snack',path:'Growth',requires:['feast'],minLevel:6,name:'Efficient Harvest',desc:'+20% XP from pellets and kills',icon:'🍏',maxStack:3,apply:m=>m.xpMult+=0.20},
   {tier:4,id:'glutton',path:'Growth',requires:['snack'],minLevel:10,name:'Glutton',desc:'+50% XP and +100 magnet range',icon:'🍽️',maxStack:1,apply:m=>{m.xpMult+=0.5;m.magnet+=100;}},
   // MINIONS
   {tier:2,id:'minions',path:'Minions',minLevel:3,name:'Minion',desc:'+1 minion (30 HP, small damage, max 3)',icon:'🫧',maxStack:3,apply:m=>{m.minionCount=Math.min(4,m.minionCount+1);m.minionList=null;}},
@@ -530,21 +533,14 @@ const UPGRADE_POOL=[
   {tier:2,id:'regen',path:'Vampire',requires:['lifesteal'],minLevel:3,name:'Regen',desc:'+60% HP regeneration',icon:'💚',maxStack:2,apply:m=>m.regenMult+=0.6},
   {tier:3,id:'bloodthirst',path:'Vampire',requires:['regen'],minLevel:6,name:'Kill Heal',desc:'Heal 20% max HP on every kill',icon:'🍷',maxStack:2,apply:m=>m.killHeal+=0.20},
   {tier:4,id:'vampire',path:'Vampire',requires:['bloodthirst'],minLevel:10,name:'Vampire',desc:'+15% lifesteal and +20% kill heal',icon:'🧛',maxStack:1,apply:m=>{m.lifesteal+=0.15;m.killHeal+=0.20;}},
-  // SPIKES
-  {tier:1,id:'spikes',path:'Spikes',name:'Spikes',desc:'Grow spikes: attackers take 6 damage back',icon:'🌵',maxStack:3,apply:m=>m.spikes+=6},
-  {tier:2,id:'sharp',path:'Spikes',requires:['spikes'],minLevel:3,name:'Sharp Spikes',desc:'+8 spike damage',icon:'📌',maxStack:2,apply:m=>m.spikes+=8},
-  {tier:3,id:'frost',path:'Spikes',requires:['sharp'],minLevel:6,name:'Frost Aura',desc:'Enemies near you move 30-40% slower',icon:'❄️',maxStack:1,apply:m=>m.frostAura=true},
-  {tier:4,id:'spikeArmor',path:'Spikes',requires:['frost'],minLevel:10,name:'Spike Armor',desc:'+12 spike damage and take 15% less damage',icon:'🦔',maxStack:1,apply:m=>{m.spikes+=12;m.dmgReduction=Math.min(0.5,m.dmgReduction+0.15);}},
   // COMBOS (need upgrades from two different paths)
-  {tier:3,id:'leech',path:'Combo',requires:['spikes','lifesteal'],minLevel:5,name:'Leech Spikes',desc:'Spike damage heals you',icon:'🦇',maxStack:1,apply:m=>m.spikeHeal=1},
   {tier:3,id:'shieldBlast',path:'Combo',requires:['shield','power'],minLevel:5,name:'Shield Blast',desc:'When your shield blocks a hit, attacker takes 20 damage and gets knocked back',icon:'💢',maxStack:1,apply:m=>m.shieldBlast=true},
   {tier:3,id:'juggernaut',path:'Combo',requires:['bulk','power'],minLevel:5,name:'Juggernaut',desc:'+50% dash knockback, take 40% less knockback',icon:'🦏',maxStack:1,apply:m=>{m.knockMult=1.5;m.knockResist=0.6;}},
-  {tier:3,id:'spikeDash',path:'Combo',requires:['spikes','swift'],minLevel:5,name:'Spiked Dash',desc:'Dash hits deal bonus damage equal to 2x your spike damage',icon:'🌪️',maxStack:1,apply:m=>m.spikeDash=true},
   {tier:3,id:'killRush',path:'Combo',requires:['execute','swift'],minLevel:5,name:'Kill Rush',desc:'Kills reset your dash and give +30% speed for 3s',icon:'🏁',maxStack:1,apply:m=>m.killRush=true},
 ];
 
 // ── Availability helpers + build tracker UI ──
-const BUILD_PATHS=['Damage','Speed','Tank','Growth','Minions','Vampire','Spikes','Combo'];
+const BUILD_PATHS=['Damage','Speed','Tank','Growth','Minions','Vampire','Combo'];
 let lastBuildSig='';
 function reqMet(u){
   const c=id=>(me.upgradeCounts[id]||0)>0;
@@ -574,6 +570,16 @@ function renderBuild(){
   html+=`<div id="buildNext"><b>Can pick:</b> ${nxt.slice(0,6).join(', ')}${nxt.length>6?' +'+(nxt.length-6)+' more':''}</div>`;
   body.innerHTML=html;
 }
+
+const UPGRADE_STATS={
+  power:[['Damage',35,100,'+35%']], execute:[['Finish',45,100,'+45%']], berserk:[['Risk power',30,100,'+30%']], reaper:[['Damage',45,100,'+45%']],
+  swift:[['Speed',15,100,'+15%']], afterburn:[['Dash range',35,100,'+35%']], adrenaline:[['Speed',30,100,'+30%']], fury:[['Cooldown',22,100,'-22%']], shockwave:[['Impact',100,100,'Unlocked']],
+  bulk:[['Size',10,100,'+10%']], vitality:[['Max health',40,100,'+40']], armor:[['Damage block',10,100,'10%']], shield:[['Shield',33,100,'+1 charge']], fortress:[['Max health',80,100,'+80']],
+  magnet:[['Pickup range',60,180,'+60']], feast:[['XP gain',30,100,'+30%']], snack:[['XP gain',20,100,'+20%']], glutton:[['XP gain',50,100,'+50%']],
+  minions:[['Minions',25,100,'+1']], minionDmg:[['Damage',25,100,'+4']], minionHp:[['Minion HP',20,100,'+20']], swarm:[['Minions',100,100,'4 total']],
+  lifesteal:[['Lifesteal',8,100,'+8%']], regen:[['Regen',60,100,'+60%']], bloodthirst:[['Kill heal',20,100,'+20%']], vampire:[['Lifesteal',15,100,'+15%']],
+  shieldBlast:[['Blast',100,100,'Unlocked']], juggernaut:[['Knockback',50,100,'+50%']], killRush:[['Rush',100,100,'Unlocked']],
+};
 
 let pendingUpgrades=0, upgradeOpen=false;
 
@@ -616,9 +622,11 @@ function showUpgradePicker(){
     const d=document.createElement('div'); d.className='upcard t'+u.tier;
     const curRank=(me.upgradeCounts&&me.upgradeCounts[u.id])||0;
     const rankBadge=curRank>0?`<span class="stack-badge">Rank ${curRank+1}</span>`:'';
+    const statPreview=(UPGRADE_STATS[u.id]||[]).map(([label,value,max,text])=>
+      `<div class="upgrade-stat"><span>${label}</span><span class="upgrade-stat-bar"><i style="width:${Math.min(100,value/max*100)}%"></i></span><span class="upgrade-stat-value">${text}</span></div>`).join('');
     d.innerHTML=`<div class="ic">${u.icon}</div><div class="txt">
       <div class="nm"><span><span class="key-badge">${i+1}</span>${u.name} ${rankBadge}</span><span class="tier-badge">${u.path==='Combo'?'COMBO':'T'+TIER_LABEL[u.tier]}</span></div>
-      <div class="ds">${u.desc}</div><div class="tree-preview">${u.path}${(()=>{const nx=UPGRADE_POOL.filter(n=>(n.requires||[]).includes(u.id)||(n.requiresAny||[]).includes(u.id)).map(n=>n.name);return nx.length?' → unlocks: '+nx.join(', '):'';})()}</div></div>`;
+      <div class="ds">${u.desc}</div><div class="tree-preview">${u.path}${(()=>{const nx=UPGRADE_POOL.filter(n=>(n.requires||[]).includes(u.id)||(n.requiresAny||[]).includes(u.id)).map(n=>n.name);return nx.length?' → unlocks: '+nx.join(', '):'';})()}<div class="upgrade-stats">${statPreview}</div></div></div>`;
     d.onclick=()=>selectUpgradeByIndex(i);
     wrap.appendChild(d);
   });
@@ -716,7 +724,7 @@ function setupNet(code){
       vky:prev?prev.vky||0:0,
       shield:data.shield||0,
       minions:data.minions||0,
-      spikes:data.spikes||0,
+      upgrades:data.upgrades||{},
       frost:data.frost||0,
       berserk:data.berserk||0
     };
@@ -779,12 +787,6 @@ function setupNet(code){
       data.dmg-=absorbed;
       if(me.shieldBlast && data.from) net.sendHit({dmg:20,byName:me.name+' (shield blast)',kx:-(data.kx||0)*1.2,ky:-(data.ky||0)*1.2},data.from);
       if(data.dmg<=0) return;
-    }
-
-    // Spikes reflect damage to attacker
-    if(me.spikes>0 && data.from){
-      net.sendHit({dmg:me.spikes, byName:me.name+' (spike)', kx:-(data.kx||0)*0.5, ky:-(data.ky||0)*0.5}, data.from);
-      if(me.spikeHeal) me.hp=Math.min(Math.min(MAX_HP_CAP,HP_BASE+me.maxHpBonus),me.hp+me.spikes*me.spikeHeal);
     }
 
     if(me.adrenalineLevel>0){
@@ -1016,7 +1018,6 @@ function loop(t){
         if(me.magnet>0&&fd<r+me.magnet){f.x+=(me.x-f.x)*0.12;f.y+=(me.y-f.y)*0.12;}
         if(fd<r){
           eaten.add(i); me.xp+=Math.round((f.big?18:7)*me.xpMult); me.level=levelFromXp(me.xp);
-          if(me.pelletHeal) me.hp=Math.min(maxHpTotal,me.hp+me.pelletHeal);
           net&&net.sendFood({i}); checkUpgradeSteps();
           setTimeout(()=>{
             if(f.big){const ang=Math.random()*Math.PI*2,rad=Math.sqrt(Math.random())*CENTER_RADIUS;food[i].x=FCX+Math.cos(ang)*rad;food[i].y=FCY+Math.sin(ang)*rad;}
@@ -1124,7 +1125,7 @@ function loop(t){
         const pd=Math.hypot(p.rx-me.x,p.ry-me.y);
         if(pd<r+pr){
           me.hitSet.add(id);
-          let finalDmg=baseDmg+(me.spikeDash?me.spikes*2:0);
+          let finalDmg=baseDmg;
           let isCrit=false;
           if(me.executioner>0 && p.hp!=null && p.maxHp && (p.hp/p.maxHp)<0.50){
             finalDmg=Math.min(MAX_DAMAGE_CAP, finalDmg*(1+me.executioner));
@@ -1146,7 +1147,7 @@ function loop(t){
         const bd=Math.hypot(b.rx-me.x,b.ry-me.y);
         if(bd<r+br){
           me.hitSet.add(id);
-          let finalDmg=baseDmg+(me.spikeDash?me.spikes*2:0);
+          let finalDmg=baseDmg;
           let isCrit=false;
           if(me.executioner>0 && (b.hp/b.maxHp)<0.50){
             finalDmg=Math.min(MAX_DAMAGE_CAP, finalDmg*(1+me.executioner));
@@ -1163,18 +1164,13 @@ function loop(t){
         }
       }
     } else {
-      // Passive collision push & Spikes reflection
+      // Passive collision push
       for(const id in peers){
         const p=peers[id]; if(!p)continue;
         const pr=radiusFromLevel(p.level||1,p.bulk||0);
         const dx=me.x-p.rx, dy=me.y-p.ry, d=Math.hypot(dx,dy)||0.001, minD=r+pr;
         if(d<minD){
           const push=(minD-d)*0.5; me.x+=(dx/d)*push; me.y+=(dy/d)*push;
-          if(me.spikes>0 && Math.random()<0.08){
-            net&&net.sendHit({dmg:me.spikes*0.4,byName:me.name+' (spike)'},id);
-            spawnHitSparks(p.rx, p.ry, -dx, -dy, '#ff3366');
-            spawnDamageText(p.rx, p.ry-pr, Math.round(me.spikes*0.4), false);
-          }
         }
       }
       for(const id in bots){
@@ -1183,11 +1179,6 @@ function loop(t){
         const dx=me.x-b.rx, dy=me.y-b.ry, d=Math.hypot(dx,dy)||0.001, minD=r+br;
         if(d<minD){
           const push=(minD-d)*0.5; me.x+=(dx/d)*push; me.y+=(dy/d)*push;
-          if(me.spikes>0 && Math.random()<0.08){
-            net&&net.sendHit({dmg:me.spikes*0.4,byName:me.name+' (spike)'},id);
-            spawnHitSparks(b.rx, b.ry, -dx, -dy, '#ff3366');
-            spawnDamageText(b.rx, b.ry-br, Math.round(me.spikes*0.4), false);
-          }
         }
       }
       me.x=Math.min(WORLD,Math.max(0,me.x)); me.y=Math.min(WORLD,Math.max(0,me.y));
@@ -1201,7 +1192,7 @@ function loop(t){
         hp:me.hp,maxHp:maxHpTotal,
         shield:me.shieldCharges||0,
         minions:me.minionCount||0,
-        spikes:me.spikes||0,
+        upgrades:me.upgradeCounts,
         frost:me.frostAura?1:0,
         berserk:(me.berserkStacks>0 && (me.hp/maxHpTotal)<0.40)?1:0
       });
@@ -1222,7 +1213,6 @@ function loop(t){
     document.getElementById('zoneWarn').style.display=inZone?'block':'none';
 
     if(me.level+'|'+JSON.stringify(me.upgradeCounts)!==lastBuildSig){ lastBuildSig=me.level+'|'+JSON.stringify(me.upgradeCounts); renderBuild(); }
-    document.getElementById('statSpikes').textContent=me.spikes>0?me.spikes:'-';
     document.getElementById('statRegen').textContent=(REGEN_RATE*me.regenMult).toFixed(1)+'/s';
     // Detailed stats grid
     document.getElementById('statSpeed').textContent=(me.speedMult*(me.berserkStacks&&me.hp/maxHpTotal<0.4?1+0.3*me.berserkStacks:1)*(now<me.adrenalineUntil?1.3:1)).toFixed(2)+'x';
@@ -1277,36 +1267,6 @@ function loop(t){
 }
 
 // ── Rendering & Visuals (Cyberpunk Audio Synth Styling) ────────────────────
-function drawRealSpikes(x, y, r, count=12){
-  const spikeLen = Math.max(6, r * 0.32);
-  const rot = Date.now() * 0.0015;
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(rot);
-
-  for(let i=0; i<count; i++){
-    const ang = (i / count) * Math.PI * 2;
-    const halfBase = (Math.PI / count) * 0.40;
-    const cos1 = Math.cos(ang - halfBase), sin1 = Math.sin(ang - halfBase);
-    const cos2 = Math.cos(ang + halfBase), sin2 = Math.sin(ang + halfBase);
-    const tipCos = Math.cos(ang), tipSin = Math.sin(ang);
-    const tipDist = r + spikeLen;
-
-    ctx.beginPath();
-    ctx.moveTo(cos1 * r, sin1 * r);
-    ctx.lineTo(tipCos * tipDist, tipSin * tipDist);
-    ctx.lineTo(cos2 * r, sin2 * r);
-    ctx.closePath();
-
-    ctx.fillStyle = '#ff2a6d';
-    ctx.fill();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
-  }
-  ctx.restore();
-}
-
 function draw(){
   // Matte dark brushed canvas
   ctx.fillStyle='#090c10'; ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -1414,14 +1374,10 @@ function draw(){
       }
     }
 
-    // Draw Peer's Sharp Spikes if active
-    if(p.spikes>0){
-      drawRealSpikes(p.rx, p.ry, pr, 12);
-    }
-
     // Draw Peer's blob
     drawBlob(p.rx,p.ry,pr,p.color||'#888',p.name||'?',p.level||1,
       (p.hp!=null&&p.maxHp)?p.hp/p.maxHp:null,skin&&skin.complete?skin:null);
+    drawBuildBadges(p.rx,p.ry,pr,p.upgrades);
 
     // Draw Peer's shield rings
     if(p.shield>0){
@@ -1486,12 +1442,8 @@ function draw(){
   if(me&&alive){
     const r=radiusFromLevel(me.level,me.bulk);
 
-    // Draw Sharp Protruding Spikes if active
-    if(me.spikes>0){
-      drawRealSpikes(me.x, me.y, r, 12);
-    }
-
     drawBlob(me.x,me.y,r,me.color,me.name+' (you)',me.level,me.hp/(Math.min(MAX_HP_CAP,HP_BASE+me.maxHpBonus)),ownSkin&&ownSkin.complete?ownSkin:null);
+    drawBuildBadges(me.x,me.y,r,me.upgradeCounts);
 
     // Shield rings
     if(me.shieldCharges>0){
@@ -1571,6 +1523,29 @@ function drawBlob(x,y,r,color,name,level,hpFrac,skinImg){
     ctx.strokeStyle='rgba(255,255,255,0.1)'; ctx.lineWidth=1; ctx.strokeRect(x-r,y-r-11,r*2,5.5);
     ctx.fillStyle=hpFrac>0.35?'#00ff88':'#ff3366'; ctx.fillRect(x-r,y-r-11,r*2*Math.max(0,hpFrac),5.5);
   }
+}
+
+function drawBuildBadges(x,y,r,upgrades){
+  if(!upgrades) return;
+  const pathMeta={Damage:{label:'D',color:'#ff5d7d'},Speed:{label:'S',color:'#00e5ff'},Tank:{label:'T',color:'#ffd166'},Growth:{label:'G',color:'#00ff88'},Minions:{label:'M',color:'#b388ff'},Vampire:{label:'V',color:'#ff3366'},Combo:{label:'C',color:'#ffffff'}};
+  const ranks={};
+  UPGRADE_POOL.forEach(upgrade=>{
+    if((upgrades[upgrade.id]||0)>0) ranks[upgrade.path]=Math.max(ranks[upgrade.path]||0,upgrade.tier);
+  });
+  const active=Object.keys(pathMeta).filter(path=>ranks[path]);
+  if(!active.length) return;
+  const spacing=17, start=x-((active.length-1)*spacing)/2;
+  ctx.save();
+  ctx.font='900 8px -apple-system, sans-serif';
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  active.forEach((path,index)=>{
+    const meta=pathMeta[path], bx=start+index*spacing, by=y-r-23;
+    ctx.beginPath(); ctx.arc(bx,by,6.5,0,Math.PI*2);
+    ctx.fillStyle=meta.color; ctx.fill();
+    ctx.fillStyle='#071018'; ctx.fillText(meta.label+Math.min(9,ranks[path]),bx,by+0.5);
+  });
+  ctx.restore();
 }
 
 function updateBoard(){
