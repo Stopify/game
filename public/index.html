@@ -79,6 +79,14 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
   color:var(--sub);padding:5px 12px;border-radius:6px;cursor:pointer;font-weight:600;transition:all .15s;
 }
 #clearSkin:hover{color:#fff;border-color:rgba(255,255,255,0.25);}
+#photoSkin{display:none;}
+#photoUpload{
+  display:inline-flex;align-items:center;justify-content:center;margin-top:8px;
+  padding:6px 12px;border-radius:6px;border:1px solid rgba(0,229,255,0.35);
+  color:var(--neon-cyan);background:#131822;cursor:pointer;font-size:11px;font-weight:700;
+}
+#photoUpload:hover{border-color:var(--neon-cyan);box-shadow:0 0 10px rgba(0,229,255,0.2);}
+#photoStatus{min-height:15px;margin-top:5px;font-size:10px;color:var(--sub);}
 
 #play{
   width:100%;padding:13px;border:none;border-radius:10px;
@@ -223,6 +231,9 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
       <div class="lbl">CUSTOM BLOB SKIN MATRIX</div>
       <canvas id="editor" width="16" height="16"></canvas><br>
       <button id="clearSkin">Reset to Solid</button>
+      <label id="photoUpload" for="photoSkin">Upload Blob Picture</label>
+      <input id="photoSkin" type="file" accept="image/*">
+      <div id="photoStatus">Optional: your picture will be cropped to fit your blob.</div>
     </div>
     <button id="play">ENTER ARENA</button>
     <div id="status">Share your lobby code with friends to join the same match.</div>
@@ -293,7 +304,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 // Cyber Emerald & High-Tech Swatches
 const COLORS=["#00ff88","#00e5ff","#ff3366","#ffd166","#b388ff","#ff8800"];
 const cEl=document.getElementById('colors');
-let chosenColor=COLORS[0], drawColor=COLORS[0], hasDrawn=false;
+let chosenColor=COLORS[0], drawColor=COLORS[0], hasDrawn=false, uploadedSkinDataURL=null, photoLoading=false;
 const editor=document.getElementById('editor'), ectx=editor.getContext('2d');
 function fillEditor(col){ectx.fillStyle=col;ectx.fillRect(0,0,16,16);}
 fillEditor(chosenColor);
@@ -306,7 +317,42 @@ COLORS.forEach((col,i)=>{
     if(!hasDrawn) fillEditor(col); };
   cEl.appendChild(s);
 });
-document.getElementById('clearSkin').onclick=()=>{ fillEditor(drawColor); hasDrawn=false; };
+document.getElementById('clearSkin').onclick=()=>{
+  fillEditor(drawColor); hasDrawn=false; uploadedSkinDataURL=null;
+  document.getElementById('photoSkin').value='';
+  document.getElementById('photoStatus').textContent='Using your painted blob skin.';
+};
+document.getElementById('photoSkin').addEventListener('change',event=>{
+  const file=event.target.files[0], status=document.getElementById('photoStatus');
+  if(!file) return;
+  if(!file.type.startsWith('image/')){
+    status.textContent='Please choose an image file.';
+    event.target.value='';
+    return;
+  }
+  photoLoading=true;
+  status.textContent='Preparing your blob picture…';
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const image=new Image();
+    image.onload=()=>{
+      const skinCanvas=document.createElement('canvas');
+      skinCanvas.width=skinCanvas.height=192;
+      const skinContext=skinCanvas.getContext('2d');
+      const sourceSize=Math.min(image.naturalWidth,image.naturalHeight);
+      const sourceX=(image.naturalWidth-sourceSize)/2;
+      const sourceY=(image.naturalHeight-sourceSize)/2;
+      skinContext.drawImage(image,sourceX,sourceY,sourceSize,sourceSize,0,0,192,192);
+      uploadedSkinDataURL=skinCanvas.toDataURL('image/jpeg',0.84);
+      photoLoading=false;
+      status.textContent='Picture selected — it will be your blob skin.';
+    };
+    image.onerror=()=>{ photoLoading=false; status.textContent='That image could not be loaded.'; };
+    image.src=reader.result;
+  };
+  reader.onerror=()=>{ photoLoading=false; status.textContent='That image could not be read.'; };
+  reader.readAsDataURL(file);
+});
 let drawing=false;
 function paintAt(clientX,clientY){
   const rect=editor.getBoundingClientRect();
@@ -543,6 +589,10 @@ let manualPaused=false, ownSkin=null, skinDataURL=null;
 function randSpawn(){return {x:100+Math.random()*(WORLD-200), y:100+Math.random()*(WORLD-200)};}
 
 document.getElementById('play').onclick=()=>{
+  if(photoLoading){
+    document.getElementById('photoStatus').textContent='Your picture is still being prepared.';
+    return;
+  }
   const nm=(document.getElementById('name').value||'Pilot').trim().slice(0,14);
   const code=(lobbyInput.value||'ABCD').trim().toUpperCase().slice(0,6);
   const sp=randSpawn();
@@ -552,7 +602,7 @@ document.getElementById('play').onclick=()=>{
       kx:0,ky:0,
       hitSet:new Set(),
       name:nm,color:chosenColor,...freshStats()};
-  skinDataURL=editor.toDataURL('image/png');
+  skinDataURL=uploadedSkinDataURL||editor.toDataURL('image/png');
   ownSkin=new Image(); ownSkin.src=skinDataURL;
   document.getElementById('start').style.display='none';
   document.getElementById('hud').style.display='block';
