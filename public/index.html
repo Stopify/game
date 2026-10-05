@@ -203,6 +203,8 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 .upcard.t2:hover{border-color:var(--neon-cyan);box-shadow:0 0 12px rgba(0,229,255,0.25);}
 .upcard.t3{border-color:rgba(255,209,102,0.3);}
 .upcard.t3:hover{border-color:var(--gold);box-shadow:0 0 12px rgba(255,209,102,0.25);}
+.upcard.t4{border-color:rgba(255,51,102,0.45);}
+.upcard.t4:hover{border-color:var(--accent2);box-shadow:0 0 12px rgba(255,51,102,0.28);}
 .upcard .ic{font-size:20px;flex-shrink:0;}
 .upcard .txt{display:flex;flex-direction:column;min-width:0;flex:1;}
 .upcard .nm{font-weight:800;font-size:11.5px;display:flex;align-items:center;justify-content:space-between;}
@@ -210,6 +212,9 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 .tier-badge{font-size:8px;padding:1px 5px;border-radius:4px;font-weight:800;}
 .t1 .tier-badge{background:#1e2530;color:#94a3b8;}
 .t2 .tier-badge{background:#0d2b33;color:var(--neon-cyan);}
+.t3 .tier-badge{background:#332b0d;color:var(--gold);}
+.t4 .tier-badge{background:#38121f;color:#ff8ca8;}
+.path-note{font-size:8.5px;color:#8b949e;margin-top:3px;font-weight:700;letter-spacing:0.2px;}
 .t3 .tier-badge{background:#332900;color:var(--gold);}
 .stack-badge{font-size:8.5px;background:rgba(0,255,136,0.14);border:1px solid rgba(0,255,136,0.3);padding:1px 5px;border-radius:4px;color:var(--neon);font-weight:800;}
 .key-badge{font-size:9.5px;background:#1a2332;border:1px solid rgba(0,255,136,0.35);padding:1px 5px;border-radius:4px;color:var(--neon);font-weight:900;font-family:monospace;margin-right:6px;}
@@ -289,7 +294,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 </div></div>
 
 <div id="upgradeOverlay"><div class="box">
-  <div class="hdr">🎉 MODULE UPGRADE! CHOOSE ONE:</div>
+  <div class="hdr">🎉 BUILD UPGRADE! CHOOSE ONE:</div>
   <div id="upgradeCards"></div>
 </div></div>
 
@@ -449,6 +454,7 @@ function freshStats(){
     berserkStacks:0,
     shockwaveLevel:0,
     shockwaveCooldownUntil:0, // internal 4s cooldown
+    shockwaveCooldownMs:4000,
     shieldMaxCharges:0,       // Stacks up to 3
     shieldCharges:0,
     shieldCooldownMs:32000,
@@ -464,44 +470,37 @@ function freshStats(){
   };
 }
 
-// ── Upgrade pool (Tiered & Fully Stackable) ─────────────────────────────────
+// ── Upgrade build tree ───────────────────────────────────────────────────────
 const UPGRADE_POOL=[
-  // ── Tier 1 ──
-  {tier:1,id:'swift',      name:'Swift Thrusters',desc:'+15% movement speed',              icon:'⚡', apply:m=>m.speedMult*=1.15},
-  {tier:1,id:'magnet',     name:'Magnetism',      desc:'+60 pellet pull range',             icon:'🧲', apply:m=>m.magnet+=60},
-  {tier:1,id:'feast',      name:'Feast Capacitor',desc:'+30% XP from pellets & kills',      icon:'🍒', apply:m=>m.xpMult+=0.30},
-  {tier:1,id:'regen',      name:'Regeneration',   desc:'+80% HP regeneration rate',         icon:'🌿', apply:m=>m.regenMult+=0.8},
-  {tier:1,id:'bulk',       name:'Bulk Armor',     desc:'+10% size and mass',                icon:'💪', apply:m=>m.bulk+=0.10},
-  {tier:1,id:'spikes',     name:'Razor Spikes',   desc:'Sharp outward spikes reflect 14 dmg',icon:'🦔', apply:m=>m.thorns+=14},
-  {tier:1,id:'adrenaline', name:'Adrenaline',     desc:'+30% speed for 2s when damaged',   icon:'💉', apply:m=>m.adrenalineLevel=(m.adrenalineLevel||0)+1},
+  {tier:1,id:'power', path:'Assault', name:'Plasma Strike',desc:'+35% lunge strike damage',icon:'💥', maxStack:3, apply:m=>m.lungeDmgMult+=0.35},
+  {tier:2,id:'execute', path:'Assault', requires:['power'], minLevel:3, name:'Executioner',desc:'+45% strike damage vs foes under 50% HP',icon:'🪓', maxStack:2, apply:m=>m.executioner=(m.executioner||0)+0.45},
+  {tier:3,id:'berserk', path:'Assault', requires:['execute'], minLevel:6, name:'Berserk Protocol',desc:'Below 40% HP: +30% speed & damage',icon:'😡', maxStack:2, apply:m=>m.berserkStacks=(m.berserkStacks||0)+1},
+  {tier:4,id:'reaper', path:'Assault', requires:['berserk'], minLevel:10, name:'Reaper Core',desc:'+45% lunge damage and +35% execute damage',icon:'☠️', maxStack:1, apply:m=>{m.lungeDmgMult+=0.45;m.executioner+=0.35;}},
 
-  // ── Tier 2 (Unlocks Lv 3) ──
-  {tier:2,id:'fury',       name:'Overclock',      desc:'-22% lunge cooldown',               icon:'🔥', apply:m=>m.lungeCdMult=Math.max(0.25,m.lungeCdMult*0.78)},
-  {tier:2,id:'power',      name:'Plasma Strike',  desc:'+35% lunge strike damage',          icon:'💥', apply:m=>m.lungeDmgMult+=0.35},
-  {tier:2,id:'vitality',   name:'Hull Plating',   desc:'+40 max HP (capped at 300)',       icon:'❤️', apply:m=>{m.maxHpBonus+=40;m.hp=Math.min(m.hp+40,Math.min(MAX_HP_CAP,HP_BASE+m.maxHpBonus));}},
-  {tier:2,id:'vampire',    name:'Energy Syphon',  desc:'+20% lifesteal on lunge hits',      icon:'🧛', apply:m=>m.vampiric+=0.20},
-  {tier:2,id:'afterburn',  name:'Afterburner',    desc:'Launch distance (diminishing)',     icon:'🚀',
-    maxStack:4, apply:m=>{
+  {tier:1,id:'swift', path:'Mobility', name:'Swift Thrusters',desc:'+15% movement speed',icon:'⚡', maxStack:3, apply:m=>m.speedMult*=1.15},
+  {tier:2,id:'afterburn', path:'Mobility', requires:['swift'], minLevel:3, name:'Afterburner',desc:'Launch distance (diminishing)',icon:'🚀', maxStack:4, apply:m=>{
       const cur=me.upgradeCounts['afterburn']||0;
       const b=cur===0?0.35:cur===1?0.26:cur===2?0.12:0.06;
       m.lungeDurMult+=b;
     }},
-  {tier:2,id:'berserk',    name:'Berserk Protocol',desc:'Below 40% HP: +30% speed & dmg',  icon:'😡', apply:m=>m.berserkStacks=(m.berserkStacks||0)+1},
-  {tier:2,id:'execute',    name:'Executioner',    desc:'+45% strike dmg vs foes under 50% HP',icon:'🪓', apply:m=>m.executioner=(m.executioner||0)+0.45},
-  {tier:2,id:'frostaura',  name:'Cryo Field',     desc:'Enemies within 140px move 25% slower',icon:'❄️', apply:m=>m.frostAura=true},
+  {tier:3,id:'fury', path:'Mobility', requires:['afterburn'], minLevel:6, name:'Overclock',desc:'-22% lunge cooldown',icon:'🔥', maxStack:3, apply:m=>m.lungeCdMult=Math.max(0.25,m.lungeCdMult*0.78)},
+  {tier:4,id:'shockwave', path:'Mobility', requires:['fury'], minLevel:10, name:'EMP Shockwave',desc:'Lunge emits tactical knockback (4s cooldown)',icon:'💫', maxStack:1, apply:m=>m.shockwaveLevel=1},
 
-  // ── Tier 3 (Unlocks Lv 6) ──
-  {tier:3,id:'minions',    name:'Defense Drone',  desc:'+1 tough 75 HP drone (up to 4)',    icon:'🫧',
-    maxStack:4, apply:m=>{ m.orbiterCount=Math.min(4,(m.orbiterCount||0)+1); m.orbiters=null; }},
-  {tier:3,id:'shield',     name:'Energy Barrier', desc:'+1 shield charge (blocks 40 dmg, max 3)',icon:'🛡️',
+  {tier:1,id:'bulk', path:'Fortress', name:'Bulk Armor',desc:'+10% size and mass',icon:'💪', maxStack:3, apply:m=>m.bulk+=0.10},
+  {tier:2,id:'vitality', path:'Fortress', requires:['bulk'], minLevel:3, name:'Hull Plating',desc:'+40 max HP (capped at 300)',icon:'❤️', maxStack:3, apply:m=>{m.maxHpBonus+=40;m.hp=Math.min(m.hp+40,Math.min(MAX_HP_CAP,HP_BASE+m.maxHpBonus));}},
+  {tier:3,id:'shield', path:'Fortress', requires:['vitality'], minLevel:6, name:'Energy Barrier',desc:'+1 shield charge (blocks 40 damage, max 3)',icon:'🛡️',
     maxStack:3, apply:m=>{
       m.shieldMaxCharges=Math.min(3,(m.shieldMaxCharges||0)+1);
       m.shieldCharges=m.shieldMaxCharges;
       m.shieldCooldownMs=Math.max(16000, 32000 - (m.shieldMaxCharges-1)*6000);
       m.shieldRechargeAt=0;
     }},
-  {tier:3,id:'shockwave',  name:'EMP Shockwave',  desc:'Lunge emits tactical knockback (4s CD)',icon:'💫',
-    maxStack:3, apply:m=>m.shockwaveLevel=(m.shockwaveLevel||0)+1},
+  {tier:4,id:'fortress', path:'Fortress', requires:['shield'], minLevel:10, name:'Fortress Core',desc:'+80 max HP and +50% regeneration',icon:'🏰', maxStack:1, apply:m=>{m.maxHpBonus+=80;m.hp=Math.min(m.hp+80,Math.min(MAX_HP_CAP,HP_BASE+m.maxHpBonus));m.regenMult+=0.5;}},
+
+  {tier:1,id:'magnet', path:'Swarm', name:'Magnetism',desc:'+60 pellet pull range',icon:'🧲', maxStack:3, apply:m=>m.magnet+=60},
+  {tier:2,id:'feast', path:'Swarm', requires:['magnet'], minLevel:3, name:'Feast Capacitor',desc:'+30% XP from pellets and kills',icon:'🍒', maxStack:3, apply:m=>m.xpMult+=0.30},
+  {tier:3,id:'minions', path:'Swarm', requires:['feast'], minLevel:6, name:'Defense Drone',desc:'+1 tough 75 HP drone (up to 4)',icon:'🫧', maxStack:4, apply:m=>{m.orbiterCount=Math.min(4,(m.orbiterCount||0)+1);m.orbiters=null;}},
+  {tier:4,id:'swarm', path:'Swarm', requires:['minions'], minLevel:10, name:'Swarm Commander',desc:'Deploy the maximum four defense drones',icon:'👑', maxStack:1, apply:m=>{m.orbiterCount=4;m.orbiters=null;}},
 ];
 
 let pendingUpgrades=0, upgradeOpen=false;
@@ -509,12 +508,12 @@ let pendingUpgrades=0, upgradeOpen=false;
 function pickUpgrades(count=3){
   const lv=me.level;
   const pool=UPGRADE_POOL.filter(u=>{
-    if(u.tier===2 && lv<3) return false;
-    if(u.tier===3 && lv<6) return false;
+    if(u.minLevel && lv<u.minLevel) return false;
+    if(u.requires&&!u.requires.every(id=>(me.upgradeCounts[id]||0)>0)) return false;
     if(u.maxStack && (me.upgradeCounts[u.id]||0)>=u.maxStack) return false;
     return true;
   });
-  function w(u){ return u.tier===1 ? Math.max(0.4, 3.5-lv*0.2) : u.tier===2 ? 1+lv*0.1 : Math.max(0.6, lv*0.18); }
+  function w(u){ return u.tier===1 ? 1.6 : 1; }
   const weighted=pool.map(u=>({u,w:w(u)}));
   const picks=[];
   while(picks.length<count && weighted.length>0){
@@ -545,14 +544,14 @@ function showUpgradePicker(){
   upgradeOpen=true;
   currentUpgradePicks=pickUpgrades(3);
   const wrap=document.getElementById('upgradeCards'); wrap.innerHTML='';
-  const TIER_LABEL=['','I','II','III'];
+  const TIER_LABEL=['','I','II','III','ULT'];
   currentUpgradePicks.forEach((u,i)=>{
     const d=document.createElement('div'); d.className='upcard t'+u.tier;
     const curRank=(me.upgradeCounts&&me.upgradeCounts[u.id])||0;
     const rankBadge=curRank>0?`<span class="stack-badge">Rank ${curRank+1}</span>`:'';
     d.innerHTML=`<div class="ic">${u.icon}</div><div class="txt">
       <div class="nm"><span><span class="key-badge">${i+1}</span>${u.name} ${rankBadge}</span><span class="tier-badge">T${TIER_LABEL[u.tier]}</span></div>
-      <div class="ds">${u.desc}</div></div>`;
+      <div class="ds">${u.desc}</div><div class="path-note">${u.path} path${u.requires?' • requires '+u.requires.map(id=>UPGRADE_POOL.find(node=>node.id===id).name).join(' + '):''}</div></div>`;
     d.onclick=()=>selectUpgradeByIndex(i);
     wrap.appendChild(d);
   });
