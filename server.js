@@ -154,8 +154,11 @@ function tickBots(code){
       if(wd<20){ b.tx=100+Math.random()*(WORLD-200); b.ty=100+Math.random()*(WORLD-200); }
     }
     const d=Math.hypot(mx,my)||1;
-    b.x=Math.min(WORLD,Math.max(0,b.x+(mx/d)*b.tier.speed));
-    b.y=Math.min(WORLD,Math.max(0,b.y+(my/d)*b.tier.speed));
+    // Frost Aura: players with it slow nearby bots
+    let slow=1;
+    players.forEach(p=>{ if(p.frost && Math.hypot(p.x-b.x,p.y-b.y)<radiusFromLevel(p.level||1)*(1+(p.bulk||0))+r+70) slow=0.65; });
+    b.x=Math.min(WORLD,Math.max(0,b.x+(mx/d)*b.tier.speed*slow));
+    b.y=Math.min(WORLD,Math.max(0,b.y+(my/d)*b.tier.speed*slow));
   });
   io.to(code).emit('bots', room.bots.map(b=>({id:b.id,x:b.x,y:b.y,level:b.level,hp:b.hp,maxHp:b.maxHp,name:b.name,color:b.tier.color,bulk:0,down:!!b.respawnAt})));
 }
