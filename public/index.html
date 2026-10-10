@@ -132,12 +132,13 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 .chip{position:relative;width:19px;height:19px;border-radius:5px;font-size:10.5px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.1);background:#0b0e14;opacity:.3;cursor:help;}
 .chip.soon{opacity:.6;border-color:rgba(0,229,255,0.35);}
 .chip.avail{opacity:1;border-color:var(--neon-cyan);box-shadow:0 0 6px rgba(0,229,255,0.45);}
+.chip.maxed{border-color:var(--gold);box-shadow:0 0 7px rgba(255,209,102,.55);background:rgba(255,209,102,.14);}
 .chip.owned{opacity:1;border-color:var(--neon);background:rgba(0,255,136,0.16);box-shadow:0 0 6px rgba(0,255,136,0.35);}
 .chip i{position:absolute;right:-3px;bottom:-5px;font-size:8px;font-style:normal;font-weight:900;background:#05140d;color:var(--neon);border-radius:4px;padding:0 2px;}
 #buildNext{margin-top:7px;font-size:9px;color:var(--sub);line-height:1.35;}
 #buildNext b{color:var(--neon-cyan);}
 /* Detailed stats grid */
-#statsGrid{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:10px;}
+#statsGrid{margin-top:8px;border-top:1px solid rgba(255,255,255,0.08);display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:10px;}
 .stat-item{display:flex;align-items:center;justify-content:space-between;color:var(--sub);font-weight:600;}
 .stat-val{font-weight:800;color:#fff;margin-left:4px;}
 
@@ -172,11 +173,11 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 
 /* Leaderboard */
 #board{
-  position:fixed;right:14px;top:14px;z-index:5;
+  position:static;
   background:linear-gradient(180deg, rgba(19,25,34,0.92) 0%, rgba(11,15,22,0.95) 100%);
   backdrop-filter:blur(8px);
   border:1px solid rgba(0,255,136,0.2);border-radius:12px;padding:10px 14px;
-  font-size:12px;display:none;min-width:160px;
+  font-size:12px;display:block;min-width:210px;max-width:250px;
   box-shadow:0 8px 24px rgba(0,0,0,0.6);
 }
 #board h3{font-size:10.5px;color:var(--neon);text-transform:uppercase;margin-bottom:6px;letter-spacing:1px;font-weight:800;}
@@ -239,6 +240,17 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 .stack-badge{font-size:8.5px;background:rgba(0,255,136,0.14);border:1px solid rgba(0,255,136,0.3);padding:1px 5px;border-radius:4px;color:var(--neon);font-weight:800;}
 .key-badge{font-size:9.5px;background:#1a2332;border:1px solid rgba(0,255,136,0.35);padding:1px 5px;border-radius:4px;color:var(--neon);font-weight:900;font-family:monospace;margin-right:6px;}
 
+#tip{position:fixed;z-index:30;display:none;pointer-events:none;max-width:230px;padding:8px 10px;border-radius:9px;background:#0d1117;border:1px solid var(--neon);box-shadow:0 8px 24px rgba(0,0,0,.7);font-size:11px;line-height:1.4;color:#dfe7ef;}
+#tip b{color:#fff;font-size:12px;} #tip .tr{color:var(--neon);font-weight:800;} #tip .tneed{color:#ff8ca8;font-weight:700;font-size:10px;}
+.sbar{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:9.5px;font-weight:700;color:var(--sub);}
+.sbar .sl{width:62px;flex-shrink:0;} .sbar .st{flex:1;height:6px;background:#0b0e14;border:1px solid rgba(255,255,255,.06);border-radius:4px;overflow:hidden;}
+.sbar .sf{height:100%;width:0;border-radius:4px;transition:width .15s;} .sbar .sv{width:42px;text-align:right;color:#fff;flex-shrink:0;}
+.bic{position:relative;display:inline-flex;width:17px;height:17px;align-items:center;justify-content:center;font-size:11px;background:#0b0e14;border:1px solid rgba(0,255,136,.3);border-radius:4px;margin:1px 1px 3px 0;cursor:help;}
+.bic i{position:absolute;right:-3px;bottom:-5px;font-size:8px;font-style:normal;font-weight:900;background:#05140d;color:var(--neon);border-radius:4px;padding:0 2px;}
+#rightCol{position:fixed;right:14px;top:14px;z-index:5;display:none;flex-direction:column;gap:10px;max-height:calc(100vh - 28px);overflow-y:auto;scrollbar-width:none;}
+#statPanel{background:linear-gradient(180deg,rgba(19,25,34,0.92) 0%,rgba(11,15,22,0.95) 100%);backdrop-filter:blur(8px);border:1px solid rgba(0,255,136,0.2);border-radius:12px;padding:10px 14px;min-width:210px;box-shadow:0 8px 24px rgba(0,0,0,0.6);}
+#statPanel h3{font-size:10.5px;color:var(--neon);text-transform:uppercase;margin-bottom:4px;letter-spacing:1px;font-weight:800;}
+.sbar.full .sl{color:var(--gold);} .sbar.full .sf{background:linear-gradient(90deg,#ffd166,#fff0b3)!important;box-shadow:0 0 8px rgba(255,209,102,.7);} .sbar.full .sv{color:var(--gold);}
 </style>
 </head>
 <body>
@@ -292,22 +304,11 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 
   <div id="buildPanel"><div id="buildHdr"><span>BUILD</span><span id="buildToggle">▾</span></div><div id="buildBody"></div></div>
   <!-- Detailed Stats Display -->
-  <div id="statsGrid">
-    <div class="stat-item"><span>Speed:</span><span class="stat-val" id="statSpeed">1.0x</span></div>
-    <div class="stat-item"><span>Damage:</span><span class="stat-val" id="statDmg">17</span></div>
-    <div class="stat-item"><span>Dash CD:</span><span class="stat-val" id="statCd">1.4s</span></div>
-    <div class="stat-item"><span>Lifesteal:</span><span class="stat-val" id="statVamp">0%</span></div>
-    <div class="stat-item"><span>Magnet:</span><span class="stat-val" id="statMag">0</span></div>
-    <div class="stat-item"><span>XP Boost:</span><span class="stat-val" id="statXp">1.0x</span></div>
-    <div class="stat-item"><span>Minions:</span><span class="stat-val" id="statMinions">0</span></div>
-    <div class="stat-item"><span>Shockwave:</span><span class="stat-val" id="statWave">-</span></div>
-    <div class="stat-item"><span>Regen:</span><span class="stat-val" id="statRegen">3.0/s</span></div>
-  </div>
 </div>
 
 <div id="killBanner"></div>
 <button id="pauseBtn">⏸</button>
-<div id="board"><h3>LEADERBOARD</h3><div id="rows"></div></div>
+<div id="rightCol"><div id="board"><h3>LEADERBOARD</h3><div id="rows"></div></div><div id="statPanel"><h3>YOUR STATS</h3><div id="statBars"></div></div></div>
 
 <div id="respawn"><div class="box">
   <div id="deathMsg" style="font-size:18px;font-weight:900;color:var(--accent2);margin-bottom:8px;">YOU DIED!</div>
@@ -329,6 +330,17 @@ canvas{display:block;width:100%;height:100%;touch-action:none;}
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
+const tipEl=document.createElement('div'); tipEl.id='tip'; document.body.appendChild(tipEl);
+document.addEventListener('mouseover',e=>{
+  const t=e.target.closest&&e.target.closest('[data-tip]');
+  if(t){ tipEl.innerHTML=t.getAttribute('data-tip'); tipEl.style.display='block'; } else tipEl.style.display='none';
+});
+document.addEventListener('mousemove',e=>{
+  if(tipEl.style.display!=='block') return;
+  const w=tipEl.offsetWidth,h=tipEl.offsetHeight;
+  tipEl.style.left=Math.max(6,Math.min(e.clientX+14,innerWidth-w-8))+'px';
+  tipEl.style.top=(e.clientY-h-14<6?e.clientY+20:e.clientY-h-14)+'px';
+});
 // Cyber Emerald & High-Tech Swatches
 const COLORS=["#00ff88","#00e5ff","#ff3366","#ffd166","#b388ff","#ff8800"];
 const cEl=document.getElementById('colors');
@@ -542,14 +554,36 @@ const UPGRADE_POOL=[
 // ── Availability helpers + build tracker UI ──
 const BUILD_PATHS=['Damage','Speed','Tank','Growth','Minions','Vampire','Combo'];
 let lastBuildSig='';
+const UPGRADE_BY_ID=Object.fromEntries(UPGRADE_POOL.map(u=>[u.id,u]));
+// A path upgrade unlocks when the one before it is MAXED. Combos need rank 2 (or max) of both parents.
+function needRank(u,id){const pre=UPGRADE_BY_ID[id];return u.path==='Combo'?Math.min(2,pre.maxStack):pre.maxStack;}
 function reqMet(u){
-  const c=id=>(me.upgradeCounts[id]||0)>0;
-  return (!u.requires||u.requires.every(c))&&(!u.requiresAny||u.requiresAny.some(c));
+  const ok=id=>(me.upgradeCounts[id]||0)>=needRank(u,id);
+  return (!u.requires||u.requires.every(ok))&&(!u.requiresAny||u.requiresAny.some(ok));
+}
+function reqText(u){
+  const f=id=>{const n=needRank(u,id);return `${u.path==='Combo'?'Rank '+n+' ':'Max '}${upName(id)} (${me.upgradeCounts[id]||0}/${n})`;};
+  return u.requires?u.requires.map(f).join(' + '):u.requiresAny.map(f).join(' or ');
 }
 function isAvailable(u){
   return (!u.minLevel||me.level>=u.minLevel)&&reqMet(u)&&(!u.maxStack||(me.upgradeCounts[u.id]||0)<u.maxStack);
 }
 function upName(id){const x=UPGRADE_POOL.find(n=>n.id===id);return x?x.name:id;}
+function upTipHtml(u,cnt,mine){
+  let h=`<b>${u.icon} ${u.name}</b>${u.maxStack>1?` <span class='tr'>${cnt}/${u.maxStack}</span>`:''}<br>${u.desc}`;
+  if(mine&&cnt===0&&!reqMet(u)) h+=`<br><span class='tneed'>Unlock: ${reqText(u)}</span>`;
+  if(mine&&cnt===0&&u.minLevel&&me.level<u.minLevel) h+=`<br><span class='tneed'>Unlocks at level ${u.minLevel}</span>`;
+  return h;
+}
+function iconsHtml(counts){
+  return UPGRADE_POOL.filter(u=>counts&&counts[u.id]>0).map(u=>`<span class='bic' data-tip="${upTipHtml(u,counts[u.id],false)}">${u.icon}${counts[u.id]>1?'<i>'+counts[u.id]+'</i>':''}</span>`).join('');
+}
+const STAT_BARS=[['Size','#ffd166'],['Max HP','#ff3366'],['Damage','#ff5d7d'],['Speed','#00e5ff'],['Dash CD','#b388ff'],['Dash range','#8f7bff'],['Lifesteal','#ff6b9a'],['Regen','#00ff88'],['Armor','#c9d1d9'],['Kill heal','#ff8ca8'],['Magnet','#8bd5ff'],['XP boost','#7dffb8'],['Minions','#b388ff'],['Shield','#00e5ff'],['Shockwave','#00ff88']];
+function setStatBars(vals){
+  const box=document.getElementById('statBars');
+  if(!box.children.length) box.innerHTML=STAT_BARS.map(b=>`<div class="sbar"><span class="sl">${b[0]}</span><div class="st"><div class="sf" style="background:${b[1]}"></div></div><span class="sv"></span></div>`).join('');
+  vals.forEach((v,i)=>{const row=box.children[i]; row.classList.toggle('full',v[0]>=0.999); row.querySelector('.sf').style.width=(Math.max(0,Math.min(1,v[0]))*100)+'%'; row.querySelector('.sv').textContent=v[1];});
+}
 function renderBuild(){
   const body=document.getElementById('buildBody'); if(!body||!me) return;
   let html='';
@@ -558,16 +592,13 @@ function renderBuild(){
     html+=`<div class="brow"><span class="blbl">${path}</span>`;
     nodes.forEach((u,i)=>{
       const cnt=me.upgradeCounts[u.id]||0;
-      let st=''; if(cnt>0) st='owned'; else if(reqMet(u)) st=(!u.minLevel||me.level>=u.minLevel)?'avail':'soon';
-      let tip=`${u.name}${u.maxStack>1?' ('+cnt+'/'+u.maxStack+')':''} - ${u.desc}`;
-      if(cnt===0&&!reqMet(u)) tip+=' | Needs: '+(u.requires?u.requires.map(upName).join(' + '):u.requiresAny.map(upName).join(' or '));
-      if(u.minLevel&&me.level<u.minLevel) tip+=' | Level '+u.minLevel;
-      html+=`${i&&path!=='Combo'?'<span class="arr">›</span>':''}<span class="chip ${st}" title="${tip}">${u.icon}${cnt>1?'<i>'+cnt+'</i>':''}</span>`;
+      let st=''; if(cnt>=u.maxStack) st='owned maxed'; else if(cnt>0) st='owned'; else if(reqMet(u)) st=(!u.minLevel||me.level>=u.minLevel)?'avail':'soon';
+      html+=`${i&&path!=='Combo'?'<span class="arr">›</span>':''}<span class="chip ${st}" data-tip="${upTipHtml(u,cnt,true)}">${u.icon}${cnt>0&&u.maxStack>1?'<i>'+cnt+'/'+u.maxStack+'</i>':''}</span>`;
     });
     html+='</div>';
   });
   const nxt=UPGRADE_POOL.filter(isAvailable).map(u=>u.name);
-  html+=`<div id="buildNext"><b>Can pick:</b> ${nxt.slice(0,6).join(', ')}${nxt.length>6?' +'+(nxt.length-6)+' more':''}</div>`;
+  html+=`<div id="buildNext"><b>Max an upgrade to unlock the next one ›</b><br><b>Can pick:</b> ${nxt.slice(0,6).join(', ')}${nxt.length>6?' +'+(nxt.length-6)+' more':''}</div>`;
   body.innerHTML=html;
 }
 
@@ -626,7 +657,7 @@ function showUpgradePicker(){
       `<div class="upgrade-stat"><span>${label}</span><span class="upgrade-stat-bar"><i style="width:${Math.min(100,value/max*100)}%"></i></span><span class="upgrade-stat-value">${text}</span></div>`).join('');
     d.innerHTML=`<div class="ic">${u.icon}</div><div class="txt">
       <div class="nm"><span><span class="key-badge">${i+1}</span>${u.name} ${rankBadge}</span><span class="tier-badge">${u.path==='Combo'?'COMBO':'T'+TIER_LABEL[u.tier]}</span></div>
-      <div class="ds">${u.desc}</div><div class="tree-preview">${u.path}${(()=>{const nx=UPGRADE_POOL.filter(n=>(n.requires||[]).includes(u.id)||(n.requiresAny||[]).includes(u.id)).map(n=>n.name);return nx.length?' → unlocks: '+nx.join(', '):'';})()}<div class="upgrade-stats">${statPreview}</div></div></div>`;
+      <div class="ds">${u.desc}</div><div class="tree-preview">${u.path}${(()=>{const nx=UPGRADE_POOL.filter(n=>(n.requires||[]).includes(u.id)||(n.requiresAny||[]).includes(u.id)).map(n=>n.name);return nx.length?' → max it to unlock: '+nx.join(', '):' (final upgrade)';})()}<div class="upgrade-stats">${statPreview}</div></div></div>`;
     d.onclick=()=>selectUpgradeByIndex(i);
     wrap.appendChild(d);
   });
@@ -681,6 +712,7 @@ document.getElementById('play').onclick=()=>{
   document.getElementById('start').style.display='none';
   document.getElementById('hud').style.display='block';
   document.getElementById('board').style.display='block';
+  document.getElementById('rightCol').style.display='flex';
   document.getElementById('pauseBtn').style.display='block';
   document.getElementById('lobbyTag').style.display='block';
   document.getElementById('lobbyTagText').textContent=code+' (connecting…)';
@@ -1213,21 +1245,29 @@ function loop(t){
     document.getElementById('zoneWarn').style.display=inZone?'block':'none';
 
     if(me.level+'|'+JSON.stringify(me.upgradeCounts)!==lastBuildSig){ lastBuildSig=me.level+'|'+JSON.stringify(me.upgradeCounts); renderBuild(); }
-    document.getElementById('statRegen').textContent=(REGEN_RATE*me.regenMult).toFixed(1)+'/s';
-    // Detailed stats grid
-    document.getElementById('statSpeed').textContent=(me.speedMult*(me.berserkStacks&&me.hp/maxHpTotal<0.4?1+0.3*me.berserkStacks:1)*(now<me.adrenalineUntil?1.3:1)).toFixed(2)+'x';
-    document.getElementById('statDmg').textContent=Math.min(MAX_DAMAGE_CAP, Math.round((16+me.level*1.3)*me.dashDmgMult));
-    document.getElementById('statCd').textContent=(cdTotal/1000).toFixed(2)+'s';
-    document.getElementById('statVamp').textContent=Math.round(me.lifesteal*100)+'%';
-    document.getElementById('statMag').textContent='+'+me.magnet;
-    document.getElementById('statXp').textContent=me.xpMult.toFixed(2)+'x';
+    const spdNow=me.speedMult*(me.berserkStacks&&me.hp/maxHpTotal<0.4?1+0.3*me.berserkStacks:1)*(now<me.adrenalineUntil?1.3:1);
+    const dmgNow=Math.min(MAX_DAMAGE_CAP, Math.round((16+me.level*1.3)*me.dashDmgMult));
+    const regenNow=REGEN_RATE*me.regenMult;
     const aliveOrbs=me.minionList?me.minionList.filter(o=>o.hp>0&&now>=o.respawnAt).length:0;
-    document.getElementById('statMinions').textContent=me.minionCount>0?`${aliveOrbs}/${me.minionCount}`:'0';
-
-    if(me.shockwaveLevel>0){
-      const waveCd=Math.max(0, me.shockwaveCooldownUntil-now);
-      document.getElementById('statWave').textContent=waveCd>0?`${(waveCd/1000).toFixed(1)}s`:'READY';
-    } else document.getElementById('statWave').textContent='-';
+    const waveCd=Math.max(0,me.shockwaveCooldownUntil-now);
+    // Each bar fills as upgrades add to that stat and turns gold when that stat is maxed out.
+    setStatBars([
+      [me.bulk/0.3, '+'+Math.round(me.bulk*100)+'%'],
+      [me.maxHpBonus/200, maxHpTotal],
+      [(me.dashDmgMult-1)/1.5, dmgNow],
+      [(me.speedMult-1)/0.52, spdNow.toFixed(2)+'x'],
+      [(1-me.dashCdMult)/0.5255, (cdTotal/1000).toFixed(2)+'s'],
+      [(me.dashDurMult-1)/0.79, '+'+Math.round((me.dashDurMult-1)*100)+'%'],
+      [me.lifesteal/0.39, Math.round(me.lifesteal*100)+'%'],
+      [(me.regenMult-1)/1.7, regenNow.toFixed(2)+'/s'],
+      [me.dmgReduction/0.2, Math.round(me.dmgReduction*100)+'%'],
+      [me.killHeal/0.6, Math.round(me.killHeal*100)+'%'],
+      [me.magnet/280, '+'+me.magnet],
+      [(me.xpMult-1)/2, me.xpMult.toFixed(2)+'x'],
+      [me.minionCount/4, me.minionCount>0?aliveOrbs+'/'+me.minionCount:'0'],
+      [me.shieldMaxCharges/3, me.shieldMaxCharges>0?me.shieldCharges+'/'+me.shieldMaxCharges:'0'],
+      [me.shockwaveLevel>0?1-waveCd/4000:0, me.shockwaveLevel>0?(waveCd>0?(waveCd/1000).toFixed(1)+'s':'READY'):'-'],
+    ]);
 
     // Shield HUD
     const shRow=document.getElementById('shieldRow');
@@ -1377,6 +1417,7 @@ function draw(){
     // Draw Peer's blob
     drawBlob(p.rx,p.ry,pr,p.color||'#888',p.name||'?',p.level||1,
       (p.hp!=null&&p.maxHp)?p.hp/p.maxHp:null,skin&&skin.complete?skin:null);
+    drawUpgradeVisuals(p.rx,p.ry,pr,p.upgrades,false);
     drawBuildBadges(p.rx,p.ry,pr,p.upgrades);
 
     // Draw Peer's shield rings
@@ -1443,6 +1484,7 @@ function draw(){
     const r=radiusFromLevel(me.level,me.bulk);
 
     drawBlob(me.x,me.y,r,me.color,me.name+' (you)',me.level,me.hp/(Math.min(MAX_HP_CAP,HP_BASE+me.maxHpBonus)),ownSkin&&ownSkin.complete?ownSkin:null);
+    drawUpgradeVisuals(me.x,me.y,r,me.upgradeCounts,true);
     drawBuildBadges(me.x,me.y,r,me.upgradeCounts);
 
     // Shield rings
@@ -1525,6 +1567,54 @@ function drawBlob(x,y,r,color,name,level,hpFrac,skinImg){
   }
 }
 
+function drawUpgradeVisuals(x,y,r,u,mine){
+  if(!u) return;
+  const t=Date.now(), TAU=Math.PI*2;
+  ctx.save();
+  // Magnet: faint ring showing pickup range
+  const mag=(u.magnet||0)*60+(u.glutton?100:0);
+  if(mag>0){ ctx.beginPath(); ctx.arc(x,y,r+mag,0,TAU); ctx.strokeStyle='rgba(139,213,255,0.16)'; ctx.lineWidth=1.5; ctx.setLineDash([3,7]); ctx.stroke(); ctx.setLineDash([]); }
+  // Regen: soft green aura
+  if(u.regen>0){ ctx.beginPath(); ctx.arc(x,y,r+4,0,TAU); ctx.strokeStyle=`rgba(0,255,136,${0.22+0.12*Math.sin(t*0.004)})`; ctx.lineWidth=2+u.regen*2; ctx.stroke(); }
+  // Max HP: red inner ring gets thicker
+  if(u.vitality>0){ ctx.beginPath(); ctx.arc(x,y,r-3,0,TAU); ctx.strokeStyle='rgba(255,51,102,0.55)'; ctx.lineWidth=u.vitality; ctx.stroke(); }
+  // Damage: red dashes spinning around the blob
+  if(u.power>0){ ctx.beginPath(); ctx.arc(x,y,r+10,t*0.002,t*0.002+TAU); ctx.strokeStyle='rgba(255,60,90,0.8)'; ctx.lineWidth=1.5+u.power; ctx.setLineDash([6,Math.max(4,18-u.power*4)]); ctx.stroke(); ctx.setLineDash([]); }
+  // Speed: cyan wings on both sides
+  if(u.swift>0){
+    ctx.fillStyle='rgba(0,229,255,0.75)';
+    [-1,1].forEach(side=>{ for(let k=0;k<u.swift;k++){
+      const ox=x+side*(r+2+k*5), w=6+k*2;
+      ctx.beginPath(); ctx.moveTo(ox,y-w); ctx.lineTo(ox+side*(8+k*3),y); ctx.lineTo(ox,y+w); ctx.closePath(); ctx.fill();
+    }});
+  }
+  // Armor: metal plates around the body
+  if(u.armor>0){
+    const plates=u.armor*4, len=TAU/plates*0.62, rot=t*0.0003;
+    for(let k=0;k<plates;k++){
+      const a=rot+k*TAU/plates;
+      ctx.beginPath(); ctx.arc(x,y,r+3,a,a+len); ctx.strokeStyle='#2b3440'; ctx.lineWidth=5+u.armor*2; ctx.stroke();
+      ctx.beginPath(); ctx.arc(x,y,r+3,a,a+len); ctx.strokeStyle='#c9d1d9'; ctx.lineWidth=2+u.armor*2; ctx.stroke();
+    }
+  }
+  // Fortress: gold outer ring
+  if(u.fortress>0){ ctx.beginPath(); ctx.arc(x,y,r+14,0,TAU); ctx.strokeStyle='rgba(255,209,102,0.7)'; ctx.lineWidth=2.5; ctx.stroke(); }
+  // Lifesteal: blood drops at the bottom edge
+  if(u.lifesteal>0){
+    ctx.fillStyle='#ff2a55';
+    for(let k=0;k<u.lifesteal*2;k++){
+      const a=Math.PI*(0.22+0.56*(k/Math.max(1,u.lifesteal*2-1||1))), dy=3+3*Math.sin(t*0.005+k);
+      ctx.beginPath(); ctx.arc(x+Math.cos(a)*(r+2),y+Math.sin(a)*(r+2)+dy,2.6,0,TAU); ctx.fill();
+    }
+  }
+  // XP boost: gold sparkles orbiting
+  const sp=Math.min(6,(u.feast||0)+(u.snack||0)+(u.glutton||0)*2);
+  if(sp>0){
+    ctx.fillStyle='#ffd166';
+    for(let k=0;k<sp;k++){ const a=t*0.0016+k*TAU/sp; ctx.beginPath(); ctx.arc(x+Math.cos(a)*(r+18),y+Math.sin(a)*(r+18),2.2,0,TAU); ctx.fill(); }
+  }
+  ctx.restore();
+}
 function drawBuildBadges(x,y,r,upgrades){
   if(!upgrades) return;
   const pathMeta={Damage:{label:'D',color:'#ff5d7d'},Speed:{label:'S',color:'#00e5ff'},Tank:{label:'T',color:'#ffd166'},Growth:{label:'G',color:'#00ff88'},Minions:{label:'M',color:'#b388ff'},Vampire:{label:'V',color:'#ff3366'},Combo:{label:'C',color:'#ffffff'}};
@@ -1548,12 +1638,17 @@ function drawBuildBadges(x,y,r,upgrades){
   ctx.restore();
 }
 
+let lastBoardSig='';
+function esc(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function updateBoard(){
-  const all=[...(me?[{name:me.name+' (you)',level:me.level}]:[]),
-    ...Object.values(peers).map(p=>({name:p.name||'?',level:p.level||1}))];
+  const all=[...(me?[{name:me.name+' (you)',level:me.level,ups:me.upgradeCounts||{}}]:[]),
+    ...Object.values(peers).map(p=>({name:p.name||'?',level:p.level||1,ups:p.upgrades||{}}))];
   all.sort((a,b)=>b.level-a.level);
-  document.getElementById('rows').innerHTML=all.slice(0,6).map(p=>
-    `<div class="row"><span>${p.name}</span><span style="color:var(--neon)">Lv ${p.level}</span></div>`).join('');
+  const top=all.slice(0,6), sig=JSON.stringify(top);
+  if(sig===lastBoardSig) return;
+  lastBoardSig=sig;
+  document.getElementById('rows').innerHTML=top.map(p=>
+    `<div class="row"><span>${esc(p.name)}</span><span style="color:var(--neon)">Lv ${p.level}</span></div><div>${iconsHtml(p.ups)}</div>`).join('');
 }
 </script>
 </body>
