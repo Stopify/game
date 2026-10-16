@@ -1299,7 +1299,7 @@ function loop(t){
   for(const id in bots){
     const b=bots[id]; if(!b)continue;
     b.vkx=(b.vkx||0)*VEL_FRICTION; b.vky=(b.vky||0)*VEL_FRICTION;
-    b.rx+=(b.x-b.rx)*0.22+b.vkx; b.ry+=(b.y-b.ry)*0.22+b.vky;
+    b.rx+=(b.x-b.rx)*0.28+b.vkx; b.ry+=(b.y-b.ry)*0.28+b.vky;
   }
 
   draw();
@@ -1446,10 +1446,39 @@ function draw(){
     }
   }
 
-  // Bots
+  // Bots (rendered identically to human players with upgrade visuals, shields, and auras)
   for(const id in bots){
     const b=bots[id]; if(!b||b.down)continue;
-    drawBlob(b.rx,b.ry,radiusFromLevel(b.level||1,b.bulk||0),b.color,b.name,b.level,b.hp/b.maxHp,null);
+    const br=radiusFromLevel(b.level||1,b.bulk||0);
+    drawBlob(b.rx,b.ry,br,b.color,b.name,b.level,b.hp/b.maxHp,null);
+    if(b.upgrades){
+      drawUpgradeVisuals(b.rx,b.ry,br,b.upgrades,false);
+      drawBuildBadges(b.rx,b.ry,br,b.upgrades);
+    }
+    if(b.shield>0){
+      for(let s=0;s<b.shield;s++){
+        ctx.beginPath(); ctx.arc(b.rx,b.ry,br+8+s*5,0,Math.PI*2);
+        ctx.strokeStyle=`rgba(0,255,136,${0.85-s*0.2})`; ctx.lineWidth=2.5;
+        ctx.setLineDash([7,5]); ctx.stroke(); ctx.setLineDash([]);
+      }
+    }
+    if(b.frost>0){
+      const frostPulse=0.4+0.2*Math.sin(Date.now()*0.004);
+      ctx.beginPath(); ctx.arc(b.rx,b.ry,br+18,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(0,229,255,${frostPulse})`; ctx.lineWidth=2.5;
+      ctx.setLineDash([8,6]); ctx.stroke(); ctx.setLineDash([]);
+    }
+    if(b.berserk>0){
+      const firePulse=0.5+0.35*Math.sin(Date.now()*0.008);
+      ctx.beginPath(); ctx.arc(b.rx,b.ry,br+5,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(255,60,20,${firePulse})`; ctx.lineWidth=3;
+      ctx.stroke();
+    }
+    if(b.dashing){
+      ctx.beginPath(); ctx.arc(b.rx,b.ry,br+7,0,Math.PI*2);
+      ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=2.5;
+      ctx.stroke();
+    }
   }
 
   // Local Player's Orbiting Minions
@@ -1642,7 +1671,8 @@ let lastBoardSig='';
 function esc(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function updateBoard(){
   const all=[...(me?[{name:me.name+' (you)',level:me.level,ups:me.upgradeCounts||{}}]:[]),
-    ...Object.values(peers).map(p=>({name:p.name||'?',level:p.level||1,ups:p.upgrades||{}}))];
+    ...Object.values(peers).map(p=>({name:p.name||'?',level:p.level||1,ups:p.upgrades||{}})),
+    ...Object.values(bots).filter(b=>!b.down).map(b=>({name:b.name,level:b.level||1,ups:b.upgrades||{}}))];
   all.sort((a,b)=>b.level-a.level);
   const top=all.slice(0,6), sig=JSON.stringify(top);
   if(sig===lastBoardSig) return;
