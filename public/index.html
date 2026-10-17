@@ -1670,15 +1670,15 @@ function drawBuildBadges(x,y,r,upgrades){
 let lastBoardSig='';
 function esc(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function updateBoard(){
-  const all=[...(me?[{name:me.name+' (you)',level:me.level,ups:me.upgradeCounts||{}}]:[]),
-    ...Object.values(peers).map(p=>({name:p.name||'?',level:p.level||1,ups:p.upgrades||{}})),
-    ...Object.values(bots).filter(b=>!b.down).map(b=>({name:b.name,level:b.level||1,ups:b.upgrades||{}}))];
+  const all=[...(me?[{name:me.name+' (you)',level:me.level}]:[]),
+    ...Object.values(peers).map(p=>({name:p.name||'?',level:p.level||1})),
+    ...Object.values(bots).filter(b=>!b.down).map(b=>({name:b.name,level:b.level||1}))];
   all.sort((a,b)=>b.level-a.level);
   const top=all.slice(0,6), sig=JSON.stringify(top);
   if(sig===lastBoardSig) return;
   lastBoardSig=sig;
   document.getElementById('rows').innerHTML=top.map(p=>
-    `<div class="row"><span>${esc(p.name)}</span><span style="color:var(--neon)">Lv ${p.level}</span></div><div>${iconsHtml(p.ups)}</div>`).join('');
+    `<div class="row"><span>${esc(p.name)}</span><span style="color:var(--neon)">Lv ${p.level}</span></div>`).join('');
 }
 </script>
 </body>
