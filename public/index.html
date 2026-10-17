@@ -683,6 +683,68 @@ function showKillBanner(victimName, xpAwarded){
   killTimer=setTimeout(()=>{ el.style.display='none'; }, 2800);
 }
 
+// ── Audio System (Supports /eat.wav with Web Audio synth fallback) ──────────
+let audioCtx = null;
+let eatAudioBuffer = null;
+
+function initAudio(){
+  if(!audioCtx){
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if(AudioContextClass) audioCtx = new AudioContextClass();
+  }
+  if(audioCtx && audioCtx.state === 'suspended'){
+    audioCtx.resume();
+  }
+  if(audioCtx && !eatAudioBuffer){
+    fetch('/eat.wav')
+      .then(res => {
+        if(!res.ok) throw new Error('eat.wav not found');
+        return res.arrayBuffer();
+      })
+      .then(buf => audioCtx.decodeAudioData(buf))
+      .then(decoded => { eatAudioBuffer = decoded; })
+      .catch(() => { /* Fallback to synthesizer */ });
+  }
+}
+['click','keydown','touchstart'].forEach(ev => window.addEventListener(ev, initAudio, { once: true }));
+
+let lastEatSoundAt = 0;
+function playEatSound(isBig = false){
+  initAudio();
+  if(!audioCtx) return;
+  const now = audioCtx.currentTime;
+  if(now - lastEatSoundAt < 0.035) return;
+  lastEatSoundAt = now;
+
+  if(eatAudioBuffer){
+    try {
+      const src = audioCtx.createBufferSource();
+      src.buffer = eatAudioBuffer;
+      src.playbackRate.value = isBig ? 0.82 : (0.94 + Math.random() * 0.14);
+      const gain = audioCtx.createGain();
+      gain.gain.value = isBig ? 0.45 : 0.3;
+      src.connect(gain);
+      gain.connect(audioCtx.destination);
+      src.start(0);
+    } catch(e){}
+  } else {
+    try {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const baseFreq = isBig ? 280 : (460 + Math.random() * 80);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(baseFreq, now);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.6, now + 0.05);
+      gain.gain.setValueAtTime(0.09, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.055);
+    } catch(e){}
+  }
+}
+
 // ── Canvas & State ────────────────────────────────────────────────────────
 const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
 function resize(){canvas.width=innerWidth;canvas.height=innerHeight;}
@@ -694,6 +756,7 @@ let manualPaused=false, ownSkin=null, skinDataURL=null;
 function randSpawn(){return {x:100+Math.random()*(WORLD-200), y:100+Math.random()*(WORLD-200)};}
 
 document.getElementById('play').onclick=()=>{
+  initAudio();
   if(photoLoading){
     document.getElementById('photoStatus').textContent='Your picture is still being prepared.';
     return;
@@ -1051,6 +1114,7 @@ function loop(t){
         if(fd<r){
           eaten.add(i); me.xp+=Math.round((f.big?18:7)*me.xpMult); me.level=levelFromXp(me.xp);
           net&&net.sendFood({i}); checkUpgradeSteps();
+          playEatSound(f.big);
           setTimeout(()=>{
             if(f.big){const ang=Math.random()*Math.PI*2,rad=Math.sqrt(Math.random())*CENTER_RADIUS;food[i].x=FCX+Math.cos(ang)*rad;food[i].y=FCY+Math.sin(ang)*rad;}
             else{food[i].x=60+Math.random()*(WORLD-120);food[i].y=60+Math.random()*(WORLD-120);}
@@ -1093,6 +1157,7 @@ function loop(t){
             if(Math.hypot(f.x-orb.x, f.y-orb.y)<orbR+5){
               eaten.add(i); me.xp+=Math.round((f.big?18:7)*me.xpMult*0.5); me.level=levelFromXp(me.xp);
               net&&net.sendFood({i}); checkUpgradeSteps();
+              playEatSound(f.big);
               setTimeout(()=>{
                 if(f.big){const ang=Math.random()*Math.PI*2,rad=Math.sqrt(Math.random())*CENTER_RADIUS;food[i].x=FCX+Math.cos(ang)*rad;food[i].y=FCY+Math.sin(ang)*rad;}
                 else{food[i].x=60+Math.random()*(WORLD-120);food[i].y=60+Math.random()*(WORLD-120);}
