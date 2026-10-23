@@ -908,7 +908,8 @@ function setupNet(code){
       document.getElementById('deathMsg').textContent=(data.byName||'Someone')+' killed you!';
       document.getElementById('respawn').style.display='flex';
 
-      net.sendKilled({victimXp:me.xp, victimName:me.name, victimLevel:me.level}, data.from);
+      const killBounty = Math.max(140, Math.round(me.xp * 0.45 + me.level * 75));
+      net.sendKilled({victimXp:me.xp, victimName:me.name, victimLevel:me.level, xpBounty:killBounty}, data.from);
     }
   });
 
@@ -1112,14 +1113,14 @@ function loop(t){
         const fd=Math.hypot(f.x-me.x,f.y-me.y);
         if(me.magnet>0&&fd<r+me.magnet){f.x+=(me.x-f.x)*0.12;f.y+=(me.y-f.y)*0.12;}
         if(fd<r){
-          eaten.add(i); me.xp+=Math.round((f.big?18:7)*me.xpMult); me.level=levelFromXp(me.xp);
+          eaten.add(i); me.xp+=Math.round((f.big?26:10)*me.xpMult); me.level=levelFromXp(me.xp);
           net&&net.sendFood({i}); checkUpgradeSteps();
           playEatSound(f.big);
           setTimeout(()=>{
             if(f.big){const ang=Math.random()*Math.PI*2,rad=Math.sqrt(Math.random())*CENTER_RADIUS;food[i].x=FCX+Math.cos(ang)*rad;food[i].y=FCY+Math.sin(ang)*rad;}
             else{food[i].x=60+Math.random()*(WORLD-120);food[i].y=60+Math.random()*(WORLD-120);}
             eaten.delete(i); net&&net.sendFood({i,respawn:true,x:food[i].x,y:food[i].y});
-          },9000+Math.random()*6000);
+          },3500+Math.random()*3000);
         }
       }
     }
@@ -1155,14 +1156,14 @@ function loop(t){
             if(eaten.has(i))continue;
             const f=food[i];
             if(Math.hypot(f.x-orb.x, f.y-orb.y)<orbR+5){
-              eaten.add(i); me.xp+=Math.round((f.big?18:7)*me.xpMult*0.5); me.level=levelFromXp(me.xp);
+              eaten.add(i); me.xp+=Math.round((f.big?26:10)*me.xpMult*0.5); me.level=levelFromXp(me.xp);
               net&&net.sendFood({i}); checkUpgradeSteps();
               playEatSound(f.big);
               setTimeout(()=>{
                 if(f.big){const ang=Math.random()*Math.PI*2,rad=Math.sqrt(Math.random())*CENTER_RADIUS;food[i].x=FCX+Math.cos(ang)*rad;food[i].y=FCY+Math.sin(ang)*rad;}
                 else{food[i].x=60+Math.random()*(WORLD-120);food[i].y=60+Math.random()*(WORLD-120);}
                 eaten.delete(i); net&&net.sendFood({i,respawn:true,x:food[i].x,y:food[i].y});
-              },9000+Math.random()*6000);
+              },3500+Math.random()*3000);
             }
           }
         }

@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const http = require('http');
 const path = require('path');
 const { Server } = require('socket.io');
@@ -72,64 +72,124 @@ function levelFromXp(xp) {
   return lvl;
 }
 
+function xpForLevel(lvl) {
+  let needed = 0, step = 130;
+  for (let l = 1; l < lvl; l++) {
+    needed += step;
+    step += 45;
+  }
+  return needed;
+}
+
 function radiusFromLevel(lv, bulk = 0) {
   return (16 + lv * 2.4) * (1 + (bulk || 0));
 }
 
 function applyBotUpgrades(b) {
   const path = b.profile.path;
-  const ups = b.upgrades;
+  const ups = {};
   const lvl = b.level;
 
   if (path === 'Damage') {
-    ups.power = Math.min(3, Math.floor(lvl / 2));
-    if (lvl >= 3) ups.execute = Math.min(2, Math.floor((lvl - 1) / 3));
-    if (lvl >= 6) ups.berserk = Math.min(2, Math.floor((lvl - 4) / 3));
+    // Tier 1: Power (max 3)
+    ups.power = Math.min(3, Math.max(1, Math.floor(lvl / 1.5)));
+    // Tier 2: Execute (max 2, minLvl 3)
+    if (lvl >= 3) ups.execute = Math.min(2, Math.max(1, lvl - 2));
+    // Tier 3: Berserk (max 2, minLvl 6)
+    if (lvl >= 6) ups.berserk = Math.min(2, Math.max(1, lvl - 5));
+    // Complementary traits: Vitality & Swift for high levels
+    if (lvl >= 5) ups.vitality = Math.min(2, Math.floor((lvl - 3) / 2));
+    if (lvl >= 7) ups.swift = Math.min(2, Math.floor((lvl - 5) / 2));
+    // Tier 4: Reaper (minLvl 10)
     if (lvl >= 10) ups.reaper = 1;
   } else if (path === 'Speed') {
-    ups.swift = Math.min(3, Math.floor(lvl / 2));
-    if (lvl >= 3) ups.afterburn = Math.min(4, Math.floor((lvl - 1) / 2));
-    if (lvl >= 6) ups.fury = Math.min(3, Math.floor((lvl - 4) / 3));
+    // Tier 1: Swift (max 3)
+    ups.swift = Math.min(3, Math.max(1, Math.floor(lvl / 1.5)));
+    // Tier 2: Afterburn (max 4, minLvl 3)
+    if (lvl >= 3) ups.afterburn = Math.min(4, Math.max(1, lvl - 2));
+    if (lvl >= 4) ups.adrenaline = 1;
+    // Tier 3: Fury (max 3, minLvl 6)
+    if (lvl >= 6) ups.fury = Math.min(3, Math.max(1, lvl - 5));
+    // Complementary: Power for high levels
+    if (lvl >= 5) ups.power = Math.min(2, Math.floor((lvl - 3) / 2));
+    // Tier 4: Shockwave (minLvl 10)
     if (lvl >= 10) ups.shockwave = 1;
   } else if (path === 'Tank') {
-    ups.bulk = Math.min(3, Math.floor(lvl / 2));
-    if (lvl >= 3) ups.vitality = Math.min(3, Math.floor((lvl - 1) / 3));
-    if (lvl >= 3) ups.armor = Math.min(2, Math.floor(lvl / 4));
-    if (lvl >= 6) ups.shield = Math.min(3, Math.floor((lvl - 3) / 3));
+    // Tier 1: Bulk (max 3)
+    ups.bulk = Math.min(3, Math.max(1, Math.floor(lvl / 1.5)));
+    // Tier 2: Vitality (max 3, minLvl 3), Armor (max 2, minLvl 3)
+    if (lvl >= 3) ups.vitality = Math.min(3, Math.max(1, Math.floor((lvl - 1) / 1.5)));
+    if (lvl >= 4) ups.armor = Math.min(2, Math.max(1, lvl - 3));
+    // Tier 3: Shield (max 3, minLvl 6)
+    if (lvl >= 6) ups.shield = Math.min(3, Math.max(1, lvl - 5));
+    // Complementary: Regen
+    if (lvl >= 7) ups.regen = Math.min(2, Math.floor((lvl - 5) / 2));
+    // Tier 4: Fortress (minLvl 10)
     if (lvl >= 10) ups.fortress = 1;
   } else if (path === 'Growth') {
-    ups.magnet = Math.min(3, Math.floor(lvl / 2));
-    if (lvl >= 3) ups.feast = Math.min(3, Math.floor((lvl - 1) / 3));
-    if (lvl >= 6) ups.snack = Math.min(3, Math.floor((lvl - 4) / 3));
+    // Tier 1: Magnet (max 3)
+    ups.magnet = Math.min(3, Math.max(1, Math.floor(lvl / 1.5)));
+    // Tier 2: Feast (max 3, minLvl 3)
+    if (lvl >= 3) ups.feast = Math.min(3, Math.max(1, lvl - 2));
+    // Tier 3: Snack (max 3, minLvl 6)
+    if (lvl >= 6) ups.snack = Math.min(3, Math.max(1, lvl - 5));
+    // Complementary: Bulk & Vitality
+    if (lvl >= 4) ups.bulk = Math.min(2, Math.floor((lvl - 2) / 2));
+    if (lvl >= 6) ups.vitality = Math.min(2, Math.floor((lvl - 4) / 2));
+    // Tier 4: Glutton (minLvl 10)
     if (lvl >= 10) ups.glutton = 1;
   } else if (path === 'Vampire') {
-    ups.lifesteal = Math.min(3, Math.floor(lvl / 2));
-    if (lvl >= 3) ups.regen = Math.min(2, Math.floor((lvl - 1) / 3));
-    if (lvl >= 6) ups.bloodthirst = Math.min(2, Math.floor((lvl - 4) / 3));
+    // Tier 1: Lifesteal (max 3)
+    ups.lifesteal = Math.min(3, Math.max(1, Math.floor(lvl / 1.5)));
+    // Tier 2: Regen (max 2, minLvl 3)
+    if (lvl >= 3) ups.regen = Math.min(2, Math.max(1, lvl - 2));
+    // Tier 3: Bloodthirst (max 2, minLvl 6)
+    if (lvl >= 6) ups.bloodthirst = Math.min(2, Math.max(1, lvl - 5));
+    // Complementary: Power & Swift
+    if (lvl >= 5) ups.power = Math.min(2, Math.floor((lvl - 3) / 2));
+    if (lvl >= 7) ups.swift = Math.min(2, Math.floor((lvl - 5) / 2));
+    // Tier 4: Vampire (minLvl 10)
     if (lvl >= 10) ups.vampire = 1;
   } else {
-    ups.power = Math.min(2, Math.floor(lvl / 3));
-    ups.swift = Math.min(2, Math.floor(lvl / 3));
-    if (lvl >= 3) ups.vitality = 1;
+    // Combo (Havoc / Hybrid)
+    ups.power = Math.min(3, Math.max(1, Math.floor(lvl / 2)));
+    ups.swift = Math.min(3, Math.max(1, Math.floor(lvl / 2)));
+    if (lvl >= 3) ups.vitality = Math.min(2, Math.floor(lvl / 2));
+    if (lvl >= 4) ups.bulk = Math.min(2, Math.floor(lvl / 3));
     if (lvl >= 5) ups.juggernaut = 1;
+    if (lvl >= 6) ups.killRush = 1;
+    if (lvl >= 7) ups.shieldBlast = 1;
+    if (lvl >= 10) ups.reaper = 1;
   }
 
+  b.upgrades = ups;
+
+  // Compute stats matched to client upgrade trees
   b.bulk = (ups.bulk || 0) * 0.10;
   b.maxHp = Math.min(300, 100 + (ups.vitality || 0) * 40 + (ups.fortress ? 80 : 0));
   b.speedMult = Math.pow(1.15, ups.swift || 0);
   b.dashDmgMult = 1 + (ups.power || 0) * 0.35 + (ups.reaper ? 0.45 : 0);
   b.dashCdMult = Math.max(0.35, Math.pow(0.78, ups.fury || 0));
-  b.dmgReduction = Math.min(0.40, (ups.armor || 0) * 0.10);
+  b.dmgReduction = Math.min(0.45, (ups.armor || 0) * 0.10);
   b.lifesteal = (ups.lifesteal || 0) * 0.08 + (ups.vampire ? 0.15 : 0);
   b.regenMult = 1 + (ups.regen || 0) * 0.60 + (ups.fortress ? 0.50 : 0);
-  b.shield = ups.shield || 0;
-  b.frost = 0;
-  b.berserk = (ups.berserk || 0) > 0 && (b.hp / b.maxHp < 0.40) ? 1 : 0;
+  b.killHeal = (ups.bloodthirst || 0) * 0.20 + (ups.vampire ? 0.20 : 0);
+  b.executioner = (ups.execute || 0) * 0.45 + (ups.reaper ? 0.35 : 0);
+  b.xpMult = 1 + (ups.feast || 0) * 0.30 + (ups.snack || 0) * 0.20 + (ups.glutton ? 0.50 : 0);
+  b.dashDurMult = 1 + ((ups.afterburn || 0) * 0.22);
+  b.maxShield = ups.shield || 0;
+  if (b.shield == null) b.shield = b.maxShield;
+  b.shield = Math.min(b.shield, b.maxShield);
 }
 
 function makeBot(i) {
   const profile = BOT_PROFILES[i % BOT_PROFILES.length];
-  const startXp = 40 + Math.floor(Math.random() * 120);
+  // Seed initial bots across levels 1 to 5 so the arena starts dynamic and tiered!
+  const initialLevels = [1, 2, 3, 2, 4, 3, 5, 2];
+  const targetLvl = initialLevels[i % initialLevels.length];
+  const baseXp = xpForLevel(targetLvl);
+  const startXp = baseXp + Math.floor(Math.random() * 60);
+
   const bot = {
     id: 'bot-' + i,
     profile,
@@ -137,9 +197,9 @@ function makeBot(i) {
     color: profile.color,
     x: 250 + Math.random() * (WORLD - 500),
     y: 250 + Math.random() * (WORLD - 500),
-    tx: WORLD / 2 + (Math.random() - 0.5) * 1200,
-    ty: WORLD / 2 + (Math.random() - 0.5) * 1200,
-    level: 1,
+    tx: WORLD / 2 + (Math.random() - 0.5) * 1400,
+    ty: WORLD / 2 + (Math.random() - 0.5) * 1400,
+    level: targetLvl,
     xp: startXp,
     hp: 100,
     maxHp: 100,
@@ -148,10 +208,16 @@ function makeBot(i) {
     speedMult: 1,
     dashDmgMult: 1,
     dashCdMult: 1,
+    dashDurMult: 1,
     dmgReduction: 0,
     lifesteal: 0,
     regenMult: 1,
+    killHeal: 0,
+    executioner: 0,
+    xpMult: 1,
     shield: 0,
+    maxShield: 0,
+    shieldRechargeAt: 0,
     frost: 0,
     berserk: 0,
     vkx: 0,
@@ -164,9 +230,9 @@ function makeBot(i) {
     dashHitSet: new Set(),
     respawnAt: null,
     lastDamageAt: 0,
+    lastAmbientXpAt: Date.now(),
     fleeUntil: 0,
     fleeTarget: null,
-    targetChangeAt: 0,
     wanderChangeAt: 0,
     stuckCheckAt: 0,
     stuckX: 0,
@@ -175,6 +241,7 @@ function makeBot(i) {
   bot.level = levelFromXp(bot.xp);
   applyBotUpgrades(bot);
   bot.hp = bot.maxHp;
+  bot.shield = bot.maxShield;
   return bot;
 }
 
@@ -229,16 +296,20 @@ function tickBots(code) {
     if (b.respawnAt) {
       if (now < b.respawnAt) return;
       b.respawnAt = null;
-      b.xp = Math.floor(b.xp * 0.45);
+      // Retain 65% XP with a floor based on (level - 1) so bots keep climbing!
+      const minFloor = xpForLevel(Math.max(1, b.level - 1));
+      b.xp = Math.max(minFloor, Math.floor(b.xp * 0.65));
       b.level = levelFromXp(b.xp);
-      b.upgrades = {};
       applyBotUpgrades(b);
       b.hp = b.maxHp;
+      b.shield = b.maxShield;
       b.x = 250 + Math.random() * (WORLD - 500);
       b.y = 250 + Math.random() * (WORLD - 500);
       b.vkx = 0; b.vky = 0;
       b.dashing = false; b.dashHitSet = new Set();
       b.fleeUntil = 0; b.lastDamageAt = 0;
+      b.stuckCheckAt = now + 2000;
+      b.stuckX = b.x; b.stuckY = b.y;
     }
 
     const oldLevel = b.level;
@@ -247,6 +318,18 @@ function tickBots(code) {
       applyBotUpgrades(b);
     }
 
+    // Ambient survival XP trickle (20 XP per 2.5s boosted by xpMult)
+    if (!b.lastAmbientXpAt || now - b.lastAmbientXpAt >= 2500) {
+      b.lastAmbientXpAt = now;
+      b.xp += Math.round(20 * (b.xpMult || 1));
+      const newLvl = levelFromXp(b.xp);
+      if (newLvl !== b.level) {
+        b.level = newLvl;
+        applyBotUpgrades(b);
+      }
+    }
+
+    // Danger zone DoT & Smart Escape
     const distC = Math.hypot(b.x - WORLD / 2, b.y - WORLD / 2);
     if (distC < CENTER_RADIUS) {
       const dotDmg = (CENTER_DOT_PER_SEC * TICK_MS) / 1000;
@@ -256,19 +339,36 @@ function tickBots(code) {
         b.respawnAt = now + 5000;
         return;
       }
-      if (b.hp / b.maxHp < 0.65) {
+      // If taking danger zone damage, head firmly outwards until clear of danger
+      if (b.hp / b.maxHp < 0.85) {
         const ang = Math.atan2(b.y - WORLD / 2, b.x - WORLD / 2);
         b.fleeTarget = {
-          x: WORLD / 2 + Math.cos(ang) * (CENTER_RADIUS + 220),
-          y: WORLD / 2 + Math.sin(ang) * (CENTER_RADIUS + 220)
+          x: WORLD / 2 + Math.cos(ang) * (CENTER_RADIUS + 200),
+          y: WORLD / 2 + Math.sin(ang) * (CENTER_RADIUS + 200)
         };
-        b.fleeUntil = now + 1200;
+        b.fleeUntil = now + 3200; // Long enough to definitely reach safety
+
+        // Dash out if dash ready
+        if (now >= b.dashCooldownUntil && !b.dashing) {
+          b.dashing = true;
+          b.dashUntil = now + DASH_DURATION_MS * (b.dashDurMult || 1);
+          b.dashCooldownUntil = now + DASH_COOLDOWN_MS * b.dashCdMult;
+          b.dashDX = Math.cos(ang);
+          b.dashDY = Math.sin(ang);
+        }
       }
     }
 
+    // HP regeneration out of combat
     if (distC >= CENTER_RADIUS && now - b.lastDamageAt > REGEN_DELAY && b.hp < b.maxHp) {
       const regenAmount = (REGEN_RATE_PER_SEC * b.regenMult * TICK_MS) / 1000;
       b.hp = Math.min(b.maxHp, b.hp + regenAmount);
+    }
+
+    // Shield recharge out of combat
+    if (b.maxShield > 0 && b.shield < b.maxShield && now - b.lastDamageAt > REGEN_DELAY && now >= (b.shieldRechargeAt || 0)) {
+      b.shield++;
+      b.shieldRechargeAt = now + 12000;
     }
 
     b.vkx *= VEL_FRICTION;
@@ -280,59 +380,84 @@ function tickBots(code) {
     const hpFrac = b.hp / b.maxHp;
     b.berserk = (b.upgrades.berserk || 0) > 0 && hpFrac < 0.40 ? 1 : 0;
 
+    // Dash execution & combat hits
     if (b.dashing) {
       if (now >= b.dashUntil) {
         b.dashing = false;
         b.dashHitSet = new Set();
       } else {
         const subSteps = 3;
-        const stepDist = PLAYER_DASH_PX_TICK / subSteps;
-        const dashDmg = Math.round((16 + b.level * 1.3) * b.dashDmgMult * (b.berserk ? 1.3 : 1));
+        const stepDist = (PLAYER_DASH_PX_TICK / subSteps) * (b.dashDurMult || 1);
+        const baseDashDmg = Math.round((16 + b.level * 1.3) * b.dashDmgMult * (b.berserk ? 1.3 : 1));
 
         for (let s = 0; s < subSteps; s++) {
           b.x = Math.min(WORLD, Math.max(0, b.x + b.dashDX * stepDist));
           b.y = Math.min(WORLD, Math.max(0, b.y + b.dashDY * stepDist));
 
+          // Hit players
           players.forEach(p => {
             if (b.dashHitSet.has(p.id)) return;
             const pr = radiusFromLevel(p.level || 1, p.bulk || 0);
             const pd = Math.hypot(p.x - b.x, p.y - b.y);
             if (pd < r + pr) {
               b.dashHitSet.add(p.id);
+              let strikeDmg = baseDashDmg;
+              const phpFrac = (p.hp != null && p.maxHp) ? p.hp / p.maxHp : 1;
+              if (b.executioner > 0 && phpFrac < 0.50) {
+                strikeDmg = Math.round(strikeDmg * (1 + b.executioner));
+              }
               const dx = (p.x - b.x) / (pd || 1);
               const dy = (p.y - b.y) / (pd || 1);
               io.to(p.id).emit('hit', {
-                dmg: dashDmg,
+                dmg: strikeDmg,
                 byName: b.name,
                 from: b.id,
                 kx: dx * KNOCK * 1.1,
                 ky: dy * KNOCK * 1.1
               });
-              if (b.lifesteal > 0) b.hp = Math.min(b.maxHp, b.hp + dashDmg * b.lifesteal);
+              if (b.lifesteal > 0) b.hp = Math.min(b.maxHp, b.hp + strikeDmg * b.lifesteal);
             }
           });
 
+          // Hit other bots
           room.bots.forEach(ob => {
             if (ob === b || ob.respawnAt || b.dashHitSet.has(ob.id)) return;
             const obr = radiusFromLevel(ob.level, ob.bulk);
             const od = Math.hypot(ob.x - b.x, ob.y - b.y);
             if (od < r + obr) {
               b.dashHitSet.add(ob.id);
-              const actualDmg = dashDmg * (1 - (ob.dmgReduction || 0));
+              let strikeDmg = baseDashDmg;
+              const ohpFrac = ob.hp / ob.maxHp;
+              if (b.executioner > 0 && ohpFrac < 0.50) {
+                strikeDmg = Math.round(strikeDmg * (1 + b.executioner));
+              }
+
+              // Target bot shield absorption
+              if (ob.shield > 0) {
+                ob.shield--;
+                ob.shieldRechargeAt = now + 16000;
+                const absorbed = Math.min(40, strikeDmg);
+                strikeDmg = Math.max(0, strikeDmg - absorbed);
+                io.to(code).emit('fx', { type: 'shieldBreak', x: ob.x, y: ob.y, r: obr + 10, alpha: 1 });
+              }
+
+              const actualDmg = strikeDmg * (1 - (ob.dmgReduction || 0));
               ob.hp = Math.max(0, ob.hp - actualDmg);
               ob.lastDamageAt = now;
               const dx = (ob.x - b.x) / (od || 1);
               const dy = (ob.y - b.y) / (od || 1);
-              ob.vkx += dx * KNOCK * 0.7;
-              ob.vky += dy * KNOCK * 0.7;
+              ob.vkx += dx * KNOCK * 0.75;
+              ob.vky += dy * KNOCK * 0.75;
               if (b.lifesteal > 0) b.hp = Math.min(b.maxHp, b.hp + actualDmg * b.lifesteal);
 
               if (ob.hp <= 0 && !ob.respawnAt) {
                 ob.respawnAt = now + 5000;
-                const bounty = Math.max(70, Math.floor(ob.xp * 0.35 + 80));
-                b.xp += bounty;
+                const bounty = Math.max(120, Math.round(ob.xp * 0.45 + ob.level * 60));
+                const gained = Math.round(bounty * (b.xpMult || 1));
+                b.xp += gained;
                 b.level = levelFromXp(b.xp);
                 applyBotUpgrades(b);
+                if (b.killHeal) b.hp = Math.min(b.maxHp, b.hp + b.maxHp * b.killHeal);
               }
             }
           });
@@ -341,25 +466,32 @@ function tickBots(code) {
       }
     }
 
+    // Food collection & vacuum
     const magnetRange = (b.upgrades.magnet || 0) * 60 + (b.upgrades.glutton ? 100 : 0);
     for (let fi = 0; fi < room.food.length; fi++) {
       const f = room.food[fi];
       if (f.eaten) continue;
       const fd = Math.hypot(f.x - b.x, f.y - b.y);
       if (magnetRange > 0 && fd < r + magnetRange) {
-        f.x += (b.x - f.x) * 0.15;
-        f.y += (b.y - f.y) * 0.15;
+        f.x += (b.x - f.x) * 0.16;
+        f.y += (b.y - f.y) * 0.16;
       }
-      if (fd < r + 10) {
+      if (fd < r + 12) {
         f.eaten = true;
-        const xpGain = f.big ? 18 : 7;
+        const baseVal = f.big ? 32 : 14; // boosted food XP
+        const xpGain = Math.round(baseVal * (b.xpMult || 1));
         b.xp += xpGain;
-        b.level = levelFromXp(b.xp);
+        const newFoodLevel = levelFromXp(b.xp);
+        if (newFoodLevel !== b.level) {
+          b.level = newFoodLevel;
+          applyBotUpgrades(b); // apply upgrades immediately on level-up from food
+        }
         io.to(code).emit('food', { i: fi });
-        respawnFood(code, fi, 9000 + Math.random() * 6000);
+        respawnFood(code, fi, 3500 + Math.random() * 3000);
       }
     }
 
+    // Low HP flee logic
     const isLosingHealth = hpFrac < b.profile.fleeThreshold;
     if (isLosingHealth && now >= b.fleeUntil - 1000) {
       let tx = 0, ty = 0, count = 0;
@@ -379,11 +511,11 @@ function tickBots(code) {
           x: Math.min(WORLD - 100, Math.max(100, b.x + Math.cos(escapeAngle) * 550)),
           y: Math.min(WORLD - 100, Math.max(100, b.y + Math.sin(escapeAngle) * 550))
         };
-        b.fleeUntil = now + 1800;
+        b.fleeUntil = now + 2000;
 
-        if (now >= b.dashCooldownUntil && Math.random() < 0.65) {
+        if (now >= b.dashCooldownUntil && Math.random() < 0.70) {
           b.dashing = true;
-          b.dashUntil = now + DASH_DURATION_MS;
+          b.dashUntil = now + DASH_DURATION_MS * (b.dashDurMult || 1);
           b.dashCooldownUntil = now + DASH_COOLDOWN_MS * b.dashCdMult;
           b.dashDX = Math.cos(escapeAngle);
           b.dashDY = Math.sin(escapeAngle);
@@ -391,6 +523,7 @@ function tickBots(code) {
       }
     }
 
+    // Target selection & combat evaluation
     const aggro = b.profile.aggroRange + b.level * 10;
     let candidates = [];
 
@@ -399,7 +532,10 @@ function tickBots(code) {
       if (d > aggro) return;
       const pr = radiusFromLevel(p.level || 1, p.bulk || 0);
       const phpFrac = (p.hp != null && p.maxHp) ? p.hp / p.maxHp : 1;
-      const score = d - (1 - phpFrac) * 220 - (b.level - (p.level || 1)) * 60;
+      const lvlDiff = (p.level || 1) - b.level;
+      // Avoid suicidal fights vs players 3+ levels higher unless they are very low HP
+      const fearPenalty = (lvlDiff > 2 && phpFrac > 0.35) ? 400 : 0;
+      const score = d - (1 - phpFrac) * 260 - (b.level - (p.level || 1)) * 50 + fearPenalty;
       candidates.push({ type: 'player', ref: p, d, x: p.x, y: p.y, r: pr, hpFrac: phpFrac, score });
     });
 
@@ -409,7 +545,9 @@ function tickBots(code) {
       if (d > aggro * 0.9) return;
       const obr = radiusFromLevel(ob.level, ob.bulk);
       const ohpFrac = ob.hp / ob.maxHp;
-      const score = d - (1 - ohpFrac) * 180 - (b.level - ob.level) * 45;
+      const lvlDiff = ob.level - b.level;
+      const fearPenalty = (lvlDiff > 2 && ohpFrac > 0.35) ? 350 : 0;
+      const score = d - (1 - ohpFrac) * 220 - (b.level - ob.level) * 40 + fearPenalty;
       candidates.push({ type: 'bot', ref: ob, d, x: ob.x, y: ob.y, r: obr, hpFrac: ohpFrac, score });
     });
 
@@ -422,36 +560,65 @@ function tickBots(code) {
     if (isFleeing) {
       moveDX = b.fleeTarget.x - b.x;
       moveDY = b.fleeTarget.y - b.y;
-      if (Math.hypot(moveDX, moveDY) < 30) b.fleeUntil = 0;
-    } else if (bestTarget && (b.profile.pref !== 'farm' || b.level >= 3 || bestTarget.hpFrac < 0.5)) {
+      if (Math.hypot(moveDX, moveDY) < 40) b.fleeUntil = 0;
+    } else if (bestTarget && (b.profile.pref !== 'farm' || b.level >= 7 || bestTarget.hpFrac < 0.35)) {
       moveDX = bestTarget.x - b.x;
       moveDY = bestTarget.y - b.y;
 
       const targetDist = bestTarget.d;
-      const wantDash = targetDist < 300 && targetDist > 55 && now >= b.dashCooldownUntil;
+      // Dash can be initiated at any close/mid range without arbitrary > 55 deadlocks!
+      const wantDash = targetDist < 340 && now >= b.dashCooldownUntil;
       const aggroCheck = Math.random() < b.profile.dashAggro;
 
       if (wantDash && aggroCheck && !b.dashing) {
         b.dashing = true;
-        b.dashUntil = now + DASH_DURATION_MS;
+        b.dashUntil = now + DASH_DURATION_MS * (b.dashDurMult || 1);
         b.dashCooldownUntil = now + DASH_COOLDOWN_MS * b.dashCdMult;
         b.dashHitSet = new Set();
         const baseAngle = Math.atan2(moveDY, moveDX);
-        const aimJitter = (Math.random() - 0.5) * 0.12;
+        const aimJitter = (Math.random() - 0.5) * 0.08;
         b.dashDX = Math.cos(baseAngle + aimJitter);
         b.dashDY = Math.sin(baseAngle + aimJitter);
+
+        // Shockwave trigger on dash if unlocked
+        if (b.upgrades.shockwave && now >= (b.shockwaveCooldownUntil || 0)) {
+          b.shockwaveCooldownUntil = now + 4000;
+          const blastR = r + 110;
+          const waveDmg = (8 + b.level * 0.8) * b.dashDmgMult;
+          io.to(code).emit('fx', { type: 'shockwave', x: b.x, y: b.y, r, maxR: blastR, alpha: 1, color: b.color });
+          players.forEach(p => {
+            const pd = Math.hypot(p.x - b.x, p.y - b.y);
+            if (pd < blastR) {
+              const ex = (p.x - b.x) / (pd || 1), ey = (p.y - b.y) / (pd || 1);
+              io.to(p.id).emit('hit', { dmg: waveDmg, byName: b.name + ' (shockwave)', kx: ex * 70, ky: ey * 70 });
+            }
+          });
+        }
       }
 
-      if (b.profile.pref === 'kite' && targetDist < r + bestTarget.r + 35) {
+      // Close combat orbiting: instead of ramming head-first when not dashing, circle and strafe!
+      if (targetDist < r + bestTarget.r + 55 && !b.dashing) {
+        const perpX = -moveDY / (targetDist || 1);
+        const perpY = moveDX / (targetDist || 1);
+        const orbitDir = (b.id.charCodeAt(b.id.length - 1) % 2 === 0) ? 1 : -1;
+        moveDX = (moveDX / (targetDist || 1)) * 0.25 + perpX * orbitDir * 1.1;
+        moveDY = (moveDY / (targetDist || 1)) * 0.25 + perpY * orbitDir * 1.1;
+      }
+
+      if (b.profile.pref === 'kite' && targetDist < r + bestTarget.r + 45) {
         moveDX = -(bestTarget.x - b.x);
         moveDY = -(bestTarget.y - b.y);
       }
     } else {
-      let nearestPellet = null, minPelletDist = 600;
+      // Seek pellets actively to grow and level up — no distance cap so bots always have a pellet goal
+      let nearestPellet = null, minPelletDist = Infinity;
       room.food.forEach(f => {
         if (f.eaten) return;
         const d = Math.hypot(f.x - b.x, f.y - b.y);
-        const weight = f.big && hpFrac > 0.65 ? d * 0.6 : d;
+        // Big pellets are strongly preferred when healthy; all bots under lvl 8 want food badly
+        const bigBonus = (f.big && hpFrac > 0.55) ? 0.45 : 1.0;
+        const lvlHunger = b.level < 8 ? 0.80 : 1.0; // hungrier at low levels
+        const weight = d * bigBonus * lvlHunger;
         if (weight < minPelletDist) {
           minPelletDist = weight;
           nearestPellet = f;
@@ -463,14 +630,32 @@ function tickBots(code) {
         moveDY = nearestPellet.y - b.y;
       } else {
         if (now > b.wanderChangeAt || Math.hypot(b.tx - b.x, b.ty - b.y) < 50) {
-          b.tx = WORLD / 2 + (Math.random() - 0.5) * 1600;
-          b.ty = WORLD / 2 + (Math.random() - 0.5) * 1600;
+          b.tx = WORLD / 2 + (Math.random() - 0.5) * 1800;
+          b.ty = WORLD / 2 + (Math.random() - 0.5) * 1800;
           b.wanderChangeAt = now + 2000 + Math.random() * 2000;
         }
         moveDX = b.tx - b.x;
         moveDY = b.ty - b.y;
       }
     }
+
+    // Steering repulsion from neighboring bots to prevent clumping
+    let repX = 0, repY = 0;
+    room.bots.forEach(ob => {
+      if (ob === b || ob.respawnAt) return;
+      const obr = radiusFromLevel(ob.level, ob.bulk);
+      const odx = b.x - ob.x;
+      const ody = b.y - ob.y;
+      const od = Math.hypot(odx, ody);
+      const avoidDist = r + obr + 80; // wider avoidance bubble
+      if (od < avoidDist && od > 0) {
+        const force = (avoidDist - od) / avoidDist;
+        repX += (odx / od) * force * 5.5; // much stronger repulsion
+        repY += (ody / od) * force * 5.5;
+      }
+    });
+    moveDX += repX;
+    moveDY += repY;
 
     const mLen = Math.hypot(moveDX, moveDY) || 1;
     let actualSpeed = (PLAYER_BASE_PX_TICK / (1 + b.level * 0.05)) * b.speedMult;
@@ -480,15 +665,74 @@ function tickBots(code) {
     b.x = Math.min(WORLD, Math.max(0, b.x + (moveDX / mLen) * actualSpeed));
     b.y = Math.min(WORLD, Math.max(0, b.y + (moveDY / mLen) * actualSpeed));
 
+    // Watchdog anti-stuck detector: gives a burst impulse if stuck in place
     if (now > b.stuckCheckAt) {
-      if (Math.hypot(b.x - b.stuckX, b.y - b.stuckY) < 25 && !b.dashing) {
-        b.tx = 150 + Math.random() * (WORLD - 300);
-        b.ty = 150 + Math.random() * (WORLD - 300);
-        b.wanderChangeAt = 0;
+      const movedDist = Math.hypot(b.x - b.stuckX, b.y - b.stuckY);
+      if (movedDist < 35 && !b.dashing) {
+        const burstAngle = Math.random() * Math.PI * 2;
+        b.vkx = Math.cos(burstAngle) * 20;
+        b.vky = Math.sin(burstAngle) * 20;
+        b.tx = 200 + Math.random() * (WORLD - 400);
+        b.ty = 200 + Math.random() * (WORLD - 400);
+        b.wanderChangeAt = now + 3000;
+        b.fleeUntil = now + 1200;
+        b.fleeTarget = { x: b.tx, y: b.ty };
       }
       b.stuckX = b.x; b.stuckY = b.y;
-      b.stuckCheckAt = now + 2500;
+      b.stuckCheckAt = now + 1800;
     }
+  });
+
+  // ── Bot-to-Bot Circle Separation (Hard Physics Push) ─────────────
+  for (let i = 0; i < room.bots.length; i++) {
+    const b1 = room.bots[i];
+    if (b1.respawnAt) continue;
+    const r1 = radiusFromLevel(b1.level, b1.bulk);
+    for (let j = i + 1; j < room.bots.length; j++) {
+      const b2 = room.bots[j];
+      if (b2.respawnAt) continue;
+      const r2 = radiusFromLevel(b2.level, b2.bulk);
+      const dx = b2.x - b1.x;
+      const dy = b2.y - b1.y;
+      let dist = Math.hypot(dx, dy);
+      const minDist = r1 + r2;
+      if (dist < minDist) {
+        if (dist === 0) dist = 0.01;
+        const overlap = minDist - dist;
+        const nx = dx / dist;
+        const ny = dy / dist;
+        // Push each bot out by full overlap so total separation = overlap (was 52% each = 104% which left gap issues)
+        b1.x -= nx * overlap * 0.55;
+        b1.y -= ny * overlap * 0.55;
+        b2.x += nx * overlap * 0.55;
+        b2.y += ny * overlap * 0.55;
+        b1.vkx -= nx * 2.5;
+        b1.vky -= ny * 2.5;
+        b2.vkx += nx * 2.5;
+        b2.vky += ny * 2.5;
+      }
+    }
+  }
+
+  // ── Bot-to-Player Separation ─────────────────────────────────────
+  players.forEach(p => {
+    const pr = radiusFromLevel(p.level || 1, p.bulk || 0);
+    room.bots.forEach(b => {
+      if (b.respawnAt) return;
+      const br = radiusFromLevel(b.level, b.bulk);
+      const dx = b.x - p.x;
+      const dy = b.y - p.y;
+      let dist = Math.hypot(dx, dy);
+      const minDist = br + pr;
+      if (dist < minDist) {
+        if (dist === 0) dist = 0.01;
+        const overlap = minDist - dist;
+        b.x += (dx / dist) * overlap * 0.55;
+        b.y += (dy / dist) * overlap * 0.55;
+        b.vkx += (dx / dist) * 1.5;
+        b.vky += (dy / dist) * 1.5;
+      }
+    });
   });
 
   io.to(code).emit('bots', room.bots.map(b => ({
@@ -571,7 +815,31 @@ io.on('connection', socket => {
       const bot = room.bots.find(b => b.id === data.target);
       if (!bot || bot.respawnAt) return;
 
-      const reducedDmg = data.dmg * (1 - (bot.dmgReduction || 0));
+      let strikeDmg = data.dmg;
+      if (bot.shield > 0) {
+        bot.shield--;
+        bot.shieldRechargeAt = Date.now() + 16000;
+        const absorbed = Math.min(40, strikeDmg);
+        strikeDmg = Math.max(0, strikeDmg - absorbed);
+        io.to(socket.data.room).emit('fx', {
+          type: 'shieldBreak',
+          x: bot.x,
+          y: bot.y,
+          r: radiusFromLevel(bot.level, bot.bulk) + 10,
+          alpha: 1
+        });
+        if (bot.upgrades && bot.upgrades.shieldBlast) {
+          socket.emit('hit', {
+            dmg: 20,
+            byName: bot.name + ' (shield blast)',
+            from: bot.id,
+            kx: -(data.kx || 0) * 1.2,
+            ky: -(data.ky || 0) * 1.2
+          });
+        }
+      }
+
+      const reducedDmg = strikeDmg * (1 - (bot.dmgReduction || 0));
       bot.hp = Math.max(0, bot.hp - reducedDmg);
       bot.lastDamageAt = Date.now();
       bot.vkx = (bot.vkx || 0) + (data.kx || 0) * 0.7;
@@ -579,7 +847,7 @@ io.on('connection', socket => {
 
       if (bot.hp <= 0) {
         bot.respawnAt = Date.now() + 5000;
-        const bounty = Math.max(70, Math.floor(bot.xp * 0.40 + bot.level * 40));
+        const bounty = Math.max(120, Math.floor(bot.xp * 0.45 + bot.level * 60));
         socket.emit('killed', {
           from: bot.id,
           bot: true,
@@ -601,9 +869,14 @@ io.on('connection', socket => {
       if (!room) return;
       const bot = room.bots.find(b => b.id === data.target);
       if (bot) {
-        bot.xp += data.xpBounty || 80;
+        const victimXp = data.victimXp || 120;
+        const victimLvl = data.victimLevel || 1;
+        const bountyCalc = Math.max(140, Math.round(victimXp * 0.45 + victimLvl * 75));
+        const finalBounty = data.xpBounty || bountyCalc;
+        bot.xp += Math.round(finalBounty * (bot.xpMult || 1));
         bot.level = levelFromXp(bot.xp);
         applyBotUpgrades(bot);
+        if (bot.killHeal) bot.hp = Math.min(bot.maxHp, bot.hp + bot.maxHp * bot.killHeal);
       }
       return;
     }
