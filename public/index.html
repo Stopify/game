@@ -525,7 +525,7 @@ const UPGRADE_POOL=[
   {tier:4,id:'shockwave',path:'Speed',requires:['fury'],minLevel:10,name:'Shockwave',desc:'Dash sends out a damaging knockback blast (4s cooldown)',icon:'💫',maxStack:1,apply:m=>m.shockwaveLevel=1},
   // TANK
   {tier:1,id:'bulk',path:'Tank',name:'Bigger Body',desc:'+10% size and weight',icon:'💪',maxStack:3,apply:m=>m.bulk+=0.10},
-  {tier:1,id:'vitality',path:'Tank',name:'Max HP +40',desc:'+40 max HP, no prereqs — available from the start!',icon:'❤️',maxStack:3,apply:m=>{m.maxHpBonus+=40;m.hp=Math.min(m.hp+40,Math.min(MAX_HP_CAP,HP_BASE+m.maxHpBonus));}},
+  {tier:2,id:'vitality',path:'Tank',requires:['bulk'],minLevel:3,name:'Max HP',desc:'+40 max HP (cap 300)',icon:'❤️',maxStack:3,apply:m=>{m.maxHpBonus+=40;m.hp=Math.min(m.hp+40,Math.min(MAX_HP_CAP,HP_BASE+m.maxHpBonus));}},
   {tier:2,id:'armor',path:'Tank',requires:['bulk'],minLevel:3,name:'Armor',desc:'Take 10% less damage',icon:'🔰',maxStack:2,apply:m=>m.dmgReduction=Math.min(0.5,m.dmgReduction+0.10)},
   {tier:3,id:'shield',path:'Tank',requires:['vitality'],minLevel:6,name:'Shield',desc:'+1 shield charge (blocks 40 damage, max 3)',icon:'🛡️',maxStack:3,apply:m=>{
       m.shieldMaxCharges=Math.min(3,m.shieldMaxCharges+1);m.shieldCharges=m.shieldMaxCharges;
@@ -543,8 +543,8 @@ const UPGRADE_POOL=[
   {tier:4,id:'swarm',path:'Minions',requires:['minionDmg'],minLevel:10,name:'Minion Army',desc:'+1 extra minion (4 total) and minions deal 50% more',icon:'👑',maxStack:1,apply:m=>{m.minionCount=Math.min(4,m.minionCount+1);m.minionBoost=1.5;m.minionList=null;}},
   // VAMPIRE
   {tier:1,id:'lifesteal',path:'Vampire',name:'Lifesteal',desc:'Heal 8% of dash damage dealt',icon:'🩸',maxStack:3,apply:m=>m.lifesteal+=0.08},
-  {tier:1,id:'regen',path:'Vampire',name:'Regen +60%',desc:'+60% HP regeneration, no prereqs — great early pickup!',icon:'💚',maxStack:2,apply:m=>m.regenMult+=0.6},
-  {tier:2,id:'bloodthirst',path:'Vampire',requires:['regen'],minLevel:3,name:'Kill Heal',desc:'Heal 20% max HP on every kill',icon:'🍷',maxStack:2,apply:m=>m.killHeal+=0.20},
+  {tier:2,id:'regen',path:'Vampire',requires:['lifesteal'],minLevel:3,name:'Regen',desc:'+60% HP regeneration',icon:'💚',maxStack:2,apply:m=>m.regenMult+=0.6},
+  {tier:3,id:'bloodthirst',path:'Vampire',requires:['regen'],minLevel:6,name:'Kill Heal',desc:'Heal 20% max HP on every kill',icon:'🍷',maxStack:2,apply:m=>m.killHeal+=0.20},
   {tier:4,id:'vampire',path:'Vampire',requires:['bloodthirst'],minLevel:10,name:'Vampire',desc:'+15% lifesteal and +20% kill heal',icon:'🧛',maxStack:1,apply:m=>{m.lifesteal+=0.15;m.killHeal+=0.20;}},
   // COMBOS (need upgrades from two different paths)
   {tier:3,id:'shieldBlast',path:'Combo',requires:['shield','power'],minLevel:5,name:'Shield Blast',desc:'When your shield blocks a hit, attacker takes 20 damage and gets knocked back',icon:'💢',maxStack:1,apply:m=>m.shieldBlast=true},

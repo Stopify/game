@@ -45,9 +45,13 @@ const BOT_PROFILES = [
 ];
 
 // Names and builds are deliberately independent of personality. Every bot gets a
-// unique, player-like name and makes its own random upgrade choices.
-const BOT_NAME_STARTS = ['Neon', 'Solar', 'Turbo', 'Cosmic', 'Frost', 'Pixel', 'Iron', 'Lunar', 'Nova', 'Shadow', 'Thunder', 'Crystal', 'Rocket', 'Blazing', 'Phantom'];
-const BOT_NAME_ACTIONS = ['Runner', 'Dasher', 'Hunter', 'Drifter', 'Striker', 'Chaser', 'Raider', 'Rider', 'Jumper', 'Spinner', 'Breaker', 'Seeker', 'Blaster', 'Sneaker', 'Wanderer'];
+// unique, natural player-style name and makes its own random upgrade choices.
+const BOT_NAMES = [
+  'Alex', 'Jordan', 'Casey', 'Riley', 'Morgan', 'Avery', 'Taylor', 'Jamie',
+  'Parker', 'Quinn', 'Rowan', 'Cameron', 'Logan', 'Hayden', 'Emery', 'Sage',
+  'Milo', 'Theo', 'Leo', 'Owen', 'Eli', 'Noah', 'Maya', 'Zoe', 'Ivy', 'Nora',
+  'Lena', 'Ruby', 'Jules', 'Sky', 'Remy', 'Sam', 'Kai', 'Finn', 'Reese', 'Blake'
+];
 const BOT_UPGRADE_DEFS = [
   ['power', 3], ['execute', 2, 3, ['power']], ['berserk', 2, 6, ['execute']], ['reaper', 1, 10, ['berserk']],
   ['swift', 3], ['afterburn', 4, 3, ['swift']], ['adrenaline', 1, 3, ['swift']], ['fury', 3, 6, null, ['afterburn', 'adrenaline']], ['shockwave', 1, 10, ['fury']],
@@ -249,11 +253,10 @@ function applyBotUpgrades(bot) {
 }
 
 function makeBotName(usedNames) {
-  let name;
-  do {
-    name = BOT_NAME_STARTS[Math.floor(Math.random() * BOT_NAME_STARTS.length)] +
-      ' ' + BOT_NAME_ACTIONS[Math.floor(Math.random() * BOT_NAME_ACTIONS.length)];
-  } while (usedNames.has(name));
+  const availableNames = BOT_NAMES.filter(name => !usedNames.has(name));
+  const name = availableNames.length
+    ? availableNames[Math.floor(Math.random() * availableNames.length)]
+    : `Player ${usedNames.size + 1}`;
   usedNames.add(name);
   return name;
 }
