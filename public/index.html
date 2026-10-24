@@ -1383,7 +1383,7 @@ function draw(){
   if(me && alive){
     const playerR = radiusFromLevel(me.level, me.bulk);
     // FOV_BASE_RADIUS is radius at lv1/no-bulk. zoom shrinks as radius grows.
-    zoom = Math.max(0.28, FOV_BASE_RADIUS / playerR);
+    zoom = Math.max(0.28, Math.pow(FOV_BASE_RADIUS / playerR, 0.4));
   }
 
   const camX=(me?me.x:WORLD/2)-canvas.width/(2*zoom),
