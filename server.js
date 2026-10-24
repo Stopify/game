@@ -34,15 +34,29 @@ const REGEN_RATE_PER_SEC = 1.25;
 
 // ── Bot Personalities & Build Paths ────────────────────────────────────────
 const BOT_PROFILES = [
-  { name: 'Apex',    color: '#ff3366', path: 'Damage',  aggroRange: 550, fleeThreshold: 0.20, dashAggro: 0.85, pref: 'hunt' },
-  { name: 'Viper',   color: '#00e5ff', path: 'Speed',   aggroRange: 500, fleeThreshold: 0.45, dashAggro: 0.70, pref: 'kite' },
-  { name: 'Titan',   color: '#ffd166', path: 'Tank',    aggroRange: 420, fleeThreshold: 0.15, dashAggro: 0.60, pref: 'tank' },
-  { name: 'Nova',    color: '#00ff88', path: 'Growth',  aggroRange: 380, fleeThreshold: 0.40, dashAggro: 0.50, pref: 'farm' },
-  { name: 'Ghost',   color: '#b388ff', path: 'Damage',  aggroRange: 600, fleeThreshold: 0.35, dashAggro: 0.90, pref: 'snipe' },
-  { name: 'Havoc',   color: '#ff7733', path: 'Combo',   aggroRange: 520, fleeThreshold: 0.22, dashAggro: 0.80, pref: 'hunt' },
-  { name: 'Blaze',   color: '#ff5522', path: 'Speed',   aggroRange: 480, fleeThreshold: 0.30, dashAggro: 0.85, pref: 'rush' },
-  { name: 'Echo',    color: '#ff2a55', path: 'Vampire', aggroRange: 460, fleeThreshold: 0.28, dashAggro: 0.75, pref: 'vamp' }
+  { color: '#ff3366', aggroRange: 550, fleeThreshold: 0.20, dashAggro: 0.85, pref: 'hunt' },
+  { color: '#00e5ff', aggroRange: 500, fleeThreshold: 0.45, dashAggro: 0.70, pref: 'kite' },
+  { color: '#ffd166', aggroRange: 420, fleeThreshold: 0.15, dashAggro: 0.60, pref: 'tank' },
+  { color: '#00ff88', aggroRange: 380, fleeThreshold: 0.40, dashAggro: 0.50, pref: 'farm' },
+  { color: '#b388ff', aggroRange: 600, fleeThreshold: 0.35, dashAggro: 0.90, pref: 'snipe' },
+  { color: '#ff7733', aggroRange: 520, fleeThreshold: 0.22, dashAggro: 0.80, pref: 'hunt' },
+  { color: '#ff5522', aggroRange: 480, fleeThreshold: 0.30, dashAggro: 0.85, pref: 'rush' },
+  { color: '#ff2a55', aggroRange: 460, fleeThreshold: 0.28, dashAggro: 0.75, pref: 'vamp' }
 ];
+
+// Names and builds are deliberately independent of personality. Every bot gets a
+// unique, player-like name and makes its own random upgrade choices.
+const BOT_NAME_STARTS = ['Neon', 'Solar', 'Turbo', 'Cosmic', 'Frost', 'Pixel', 'Iron', 'Lunar', 'Nova', 'Shadow', 'Thunder', 'Crystal', 'Rocket', 'Blazing', 'Phantom'];
+const BOT_NAME_ACTIONS = ['Runner', 'Dasher', 'Hunter', 'Drifter', 'Striker', 'Chaser', 'Raider', 'Rider', 'Jumper', 'Spinner', 'Breaker', 'Seeker', 'Blaster', 'Sneaker', 'Wanderer'];
+const BOT_UPGRADE_DEFS = [
+  ['power', 3], ['execute', 2, 3, ['power']], ['berserk', 2, 6, ['execute']], ['reaper', 1, 10, ['berserk']],
+  ['swift', 3], ['afterburn', 4, 3, ['swift']], ['adrenaline', 1, 3, ['swift']], ['fury', 3, 6, null, ['afterburn', 'adrenaline']], ['shockwave', 1, 10, ['fury']],
+  ['bulk', 3], ['vitality', 3], ['armor', 2, 3, ['bulk']], ['shield', 3, 6, ['vitality']], ['fortress', 1, 10, ['shield']],
+  ['magnet', 3], ['feast', 3, 3, ['magnet']], ['snack', 3, 6, ['feast']], ['glutton', 1, 10, ['snack']],
+  ['lifesteal', 3], ['regen', 2], ['bloodthirst', 2, 3, ['regen']], ['vampire', 1, 10, ['bloodthirst']],
+  ['juggernaut', 1, 5, ['bulk', 'power'], null, true], ['killRush', 1, 5, ['execute', 'swift'], null, true], ['shieldBlast', 1, 5, ['shield', 'power'], null, true]
+].map(([id, maxStack, minLevel = 1, requires = [], requiresAny = [], combo = false]) => ({ id, maxStack, minLevel, requires: requires || [], requiresAny: requiresAny || [], combo }));
+const BOT_UPGRADE_BY_ID = Object.fromEntries(BOT_UPGRADE_DEFS.map(u => [u.id, u]));
 
 function mulberry32(seed) {
   return function() {
@@ -85,7 +99,7 @@ function radiusFromLevel(lv, bulk = 0) {
   return (16 + lv * 2.4) * (1 + (bulk || 0));
 }
 
-function applyBotUpgrades(b) {
+function applyLegacyBotUpgrades(b) {
   const path = b.profile.path;
   const ups = {};
   const lvl = b.level;
@@ -182,7 +196,69 @@ function applyBotUpgrades(b) {
   b.shield = Math.min(b.shield, b.maxShield);
 }
 
-function makeBot(i) {
+// Mirrors the player's level-up cadence: levels 1-5, then 7, 9, 12, 16, etc.
+function botUpgradeSlots(level) {
+  let slots = 0, lastLevel = 0, step = 1;
+  while (level - lastLevel >= step) {
+    slots++;
+    lastLevel += step;
+    if (lastLevel >= 5) step++;
+  }
+  return slots;
+}
+
+function botUpgradeIsAvailable(upgrade, counts, level) {
+  if (level < upgrade.minLevel || (counts[upgrade.id] || 0) >= upgrade.maxStack) return false;
+  const requiredRank = id => {
+    const parent = BOT_UPGRADE_BY_ID[id];
+    return upgrade.combo ? Math.min(2, parent.maxStack) : parent.maxStack;
+  };
+  return upgrade.requires.every(id => (counts[id] || 0) >= requiredRank(id)) &&
+    (!upgrade.requiresAny.length || upgrade.requiresAny.some(id => (counts[id] || 0) >= requiredRank(id)));
+}
+
+function applyBotUpgrades(bot) {
+  const counts = bot.upgradeCounts || (bot.upgradeCounts = {});
+  while (Object.values(counts).reduce((sum, rank) => sum + rank, 0) < botUpgradeSlots(bot.level)) {
+    const choices = BOT_UPGRADE_DEFS.filter(upgrade => botUpgradeIsAvailable(upgrade, counts, bot.level));
+    if (!choices.length) break;
+    // A bot sees a small random hand, then makes a random choice from it like a player would.
+    const hand = choices.sort(() => Math.random() - 0.5).slice(0, Math.min(3, choices.length));
+    const pick = hand[Math.floor(Math.random() * hand.length)];
+    counts[pick.id] = (counts[pick.id] || 0) + 1;
+  }
+
+  bot.upgrades = { ...counts };
+  const ups = bot.upgrades;
+  const b = bot;
+  b.bulk = (ups.bulk || 0) * 0.10;
+  b.maxHp = Math.min(300, 100 + (ups.vitality || 0) * 40 + (ups.fortress ? 80 : 0));
+  b.speedMult = Math.pow(1.15, ups.swift || 0);
+  b.dashDmgMult = 1 + (ups.power || 0) * 0.35 + (ups.reaper ? 0.45 : 0);
+  b.dashCdMult = Math.max(0.35, Math.pow(0.78, ups.fury || 0));
+  b.dmgReduction = Math.min(0.45, (ups.armor || 0) * 0.10);
+  b.lifesteal = (ups.lifesteal || 0) * 0.08 + (ups.vampire ? 0.15 : 0);
+  b.regenMult = 1 + (ups.regen || 0) * 0.60 + (ups.fortress ? 0.50 : 0);
+  b.killHeal = (ups.bloodthirst || 0) * 0.20 + (ups.vampire ? 0.20 : 0);
+  b.executioner = (ups.execute || 0) * 0.45 + (ups.reaper ? 0.35 : 0);
+  b.xpMult = 1 + (ups.feast || 0) * 0.30 + (ups.snack || 0) * 0.20 + (ups.glutton ? 0.50 : 0);
+  b.dashDurMult = 1 + ((ups.afterburn || 0) * 0.22);
+  b.maxShield = ups.shield || 0;
+  if (b.shield == null) b.shield = b.maxShield;
+  b.shield = Math.min(b.shield, b.maxShield);
+}
+
+function makeBotName(usedNames) {
+  let name;
+  do {
+    name = BOT_NAME_STARTS[Math.floor(Math.random() * BOT_NAME_STARTS.length)] +
+      ' ' + BOT_NAME_ACTIONS[Math.floor(Math.random() * BOT_NAME_ACTIONS.length)];
+  } while (usedNames.has(name));
+  usedNames.add(name);
+  return name;
+}
+
+function makeBot(i, usedNames) {
   const profile = BOT_PROFILES[i % BOT_PROFILES.length];
   // Seed initial bots across levels 1 to 5 so the arena starts dynamic and tiered!
   const initialLevels = [1, 2, 3, 2, 4, 3, 5, 2, 1, 3, 2, 4, 3, 5];
@@ -193,7 +269,7 @@ function makeBot(i) {
   const bot = {
     id: 'bot-' + i,
     profile,
-    name: profile.name,
+    name: makeBotName(usedNames),
     color: profile.color,
     x: 400 + Math.random() * (WORLD - 800),
     y: 400 + Math.random() * (WORLD - 800),
@@ -205,6 +281,7 @@ function makeBot(i) {
     maxHp: 100,
     bulk: 0,
     upgrades: {},
+    upgradeCounts: {},
     speedMult: 1,
     dashDmgMult: 1,
     dashCdMult: 1,
@@ -250,7 +327,8 @@ const rooms = {};
 function ensureRoom(code) {
   if (rooms[code]) return rooms[code];
   const bots = [];
-  for (let i = 0; i < BOT_COUNT; i++) bots.push(makeBot(i));
+  const usedNames = new Set();
+  for (let i = 0; i < BOT_COUNT; i++) bots.push(makeBot(i, usedNames));
   const room = { bots, food: makeFood() };
   room.interval = setInterval(() => tickBots(code), TICK_MS);
   rooms[code] = room;

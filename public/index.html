@@ -751,7 +751,7 @@ const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
 function resize(){canvas.width=innerWidth;canvas.height=innerHeight;}
 addEventListener('resize',resize);resize();
 
-let me=null, peers={}, peerSkins={}, bots={}, net=null, pointer={x:innerWidth/2,y:innerHeight/2}, alive=false;
+let me=null, peers={}, peerSkins={}, bots={}, net=null, pointer={x:innerWidth/2,y:innerHeight/2}, alive=false, pointerDashHeld=false;
 let manualPaused=false, ownSkin=null, skinDataURL=null;
 
 function randSpawn(){return {x:100+Math.random()*(WORLD-200), y:100+Math.random()*(WORLD-200)};}
@@ -946,7 +946,15 @@ function setupNet(code){
 // ── Input ─────────────────────────────────────────────────────────────────
 function ptrToWorld(){ return {dx:pointer.x-canvas.width/2, dy:pointer.y-canvas.height/2}; }
 canvas.addEventListener('pointermove',e=>{pointer.x=e.clientX;pointer.y=e.clientY;});
-canvas.addEventListener('pointerdown',e=>{ pointer.x=e.clientX;pointer.y=e.clientY; tryDash(); });
+canvas.addEventListener('pointerdown',e=>{
+  if(e.button!==0)return;
+  pointer.x=e.clientX;pointer.y=e.clientY;
+  pointerDashHeld=true;
+  tryDash();
+});
+addEventListener('pointerup',e=>{if(e.button===0)pointerDashHeld=false;});
+canvas.addEventListener('pointercancel',()=>{pointerDashHeld=false;});
+addEventListener('blur',()=>{pointerDashHeld=false;});
 
 function tryDash(){
   if(!alive||!me||manualPaused)return;
@@ -1085,6 +1093,8 @@ function loop(t){
     me.kx*=VEL_FRICTION; me.ky*=VEL_FRICTION;
 
     if(!manualPaused){
+      // Holding left click dashes again automatically whenever the thruster is ready.
+      if(pointerDashHeld) tryDash();
       let mvx,mvy;
       if(now<me.dashUntil){
         mvx=me.dashDX*DASH_SPEED; mvy=me.dashDY*DASH_SPEED;
@@ -1383,7 +1393,8 @@ function draw(){
   if(me && alive){
     const playerR = radiusFromLevel(me.level, me.bulk);
     // FOV_BASE_RADIUS is radius at lv1/no-bulk. zoom shrinks as radius grows.
-    zoom = Math.max(0.28, Math.pow(FOV_BASE_RADIUS / playerR, 0.4));
+    // Make fresh blobs read larger without taking away the wide view earned by giants.
+    zoom = Math.max(0.30, Math.min(1.24, 0.28 + 0.96 * (FOV_BASE_RADIUS / playerR)));
   }
 
   const camX=(me?me.x:WORLD/2)-canvas.width/(2*zoom),
