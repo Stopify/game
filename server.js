@@ -12,12 +12,12 @@ const io = new Server(server, {
 });
 
 // ── World & Physics Constants (100% matched to client) ─────────────────────
-const WORLD = 3600;
-const OUTER_FOOD = 300;
-const CENTER_FOOD = 70;
-const CENTER_RADIUS = 520;
+const WORLD = 7200;
+const OUTER_FOOD = 700;
+const CENTER_FOOD = 120;
+const CENTER_RADIUS = 680;
 const KNOCK = 44;
-const BOT_COUNT = 8;
+const BOT_COUNT = 14;
 const TICK_MS = 50; // 20 Hz tick rate for responsive, smooth gameplay
 const FRAMES_PER_TICK = TICK_MS / 16.6667; // ~3.0 frames per tick
 
@@ -185,7 +185,7 @@ function applyBotUpgrades(b) {
 function makeBot(i) {
   const profile = BOT_PROFILES[i % BOT_PROFILES.length];
   // Seed initial bots across levels 1 to 5 so the arena starts dynamic and tiered!
-  const initialLevels = [1, 2, 3, 2, 4, 3, 5, 2];
+  const initialLevels = [1, 2, 3, 2, 4, 3, 5, 2, 1, 3, 2, 4, 3, 5];
   const targetLvl = initialLevels[i % initialLevels.length];
   const baseXp = xpForLevel(targetLvl);
   const startXp = baseXp + Math.floor(Math.random() * 60);
@@ -195,10 +195,10 @@ function makeBot(i) {
     profile,
     name: profile.name,
     color: profile.color,
-    x: 250 + Math.random() * (WORLD - 500),
-    y: 250 + Math.random() * (WORLD - 500),
-    tx: WORLD / 2 + (Math.random() - 0.5) * 1400,
-    ty: WORLD / 2 + (Math.random() - 0.5) * 1400,
+    x: 400 + Math.random() * (WORLD - 800),
+    y: 400 + Math.random() * (WORLD - 800),
+    tx: WORLD / 2 + (Math.random() - 0.5) * 2800,
+    ty: WORLD / 2 + (Math.random() - 0.5) * 2800,
     level: targetLvl,
     xp: startXp,
     hp: 100,

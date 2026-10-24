@@ -411,7 +411,8 @@ lobbyInput.value=randCode();
 document.getElementById('randomLobby').onclick=()=>{lobbyInput.value=randCode();};
 
 // ── Constants & Caps ───────────────────────────────────────────────────────
-const WORLD=3600, OUTER_FOOD=300, CENTER_FOOD=70, CENTER_RADIUS=520;
+const WORLD=7200, OUTER_FOOD=700, CENTER_FOOD=120, CENTER_RADIUS=680;
+const FOV_BASE_RADIUS = 18.4; // radius at lv1/no-bulk for zoom calculation
 const BASE_SPEED=2.3, DASH_SPEED=10.5, DASH_DURATION=220, DASH_ENDLAG=280, DASH_COOLDOWN=1400, KNOCK=44;
 const HP_BASE=100, REGEN_DELAY=7000, REGEN_RATE=1.25;
 const VEL_FRICTION=0.91;   // ice-slide friction per frame
@@ -524,7 +525,7 @@ const UPGRADE_POOL=[
   {tier:4,id:'shockwave',path:'Speed',requires:['fury'],minLevel:10,name:'Shockwave',desc:'Dash sends out a damaging knockback blast (4s cooldown)',icon:'💫',maxStack:1,apply:m=>m.shockwaveLevel=1},
   // TANK
   {tier:1,id:'bulk',path:'Tank',name:'Bigger Body',desc:'+10% size and weight',icon:'💪',maxStack:3,apply:m=>m.bulk+=0.10},
-  {tier:2,id:'vitality',path:'Tank',requires:['bulk'],minLevel:3,name:'Max HP',desc:'+40 max HP (cap 300)',icon:'❤️',maxStack:3,apply:m=>{m.maxHpBonus+=40;m.hp=Math.min(m.hp+40,Math.min(MAX_HP_CAP,HP_BASE+m.maxHpBonus));}},
+  {tier:1,id:'vitality',path:'Tank',name:'Max HP +40',desc:'+40 max HP, no prereqs — available from the start!',icon:'❤️',maxStack:3,apply:m=>{m.maxHpBonus+=40;m.hp=Math.min(m.hp+40,Math.min(MAX_HP_CAP,HP_BASE+m.maxHpBonus));}},
   {tier:2,id:'armor',path:'Tank',requires:['bulk'],minLevel:3,name:'Armor',desc:'Take 10% less damage',icon:'🔰',maxStack:2,apply:m=>m.dmgReduction=Math.min(0.5,m.dmgReduction+0.10)},
   {tier:3,id:'shield',path:'Tank',requires:['vitality'],minLevel:6,name:'Shield',desc:'+1 shield charge (blocks 40 damage, max 3)',icon:'🛡️',maxStack:3,apply:m=>{
       m.shieldMaxCharges=Math.min(3,m.shieldMaxCharges+1);m.shieldCharges=m.shieldMaxCharges;
@@ -542,8 +543,8 @@ const UPGRADE_POOL=[
   {tier:4,id:'swarm',path:'Minions',requires:['minionDmg'],minLevel:10,name:'Minion Army',desc:'+1 extra minion (4 total) and minions deal 50% more',icon:'👑',maxStack:1,apply:m=>{m.minionCount=Math.min(4,m.minionCount+1);m.minionBoost=1.5;m.minionList=null;}},
   // VAMPIRE
   {tier:1,id:'lifesteal',path:'Vampire',name:'Lifesteal',desc:'Heal 8% of dash damage dealt',icon:'🩸',maxStack:3,apply:m=>m.lifesteal+=0.08},
-  {tier:2,id:'regen',path:'Vampire',requires:['lifesteal'],minLevel:3,name:'Regen',desc:'+60% HP regeneration',icon:'💚',maxStack:2,apply:m=>m.regenMult+=0.6},
-  {tier:3,id:'bloodthirst',path:'Vampire',requires:['regen'],minLevel:6,name:'Kill Heal',desc:'Heal 20% max HP on every kill',icon:'🍷',maxStack:2,apply:m=>m.killHeal+=0.20},
+  {tier:1,id:'regen',path:'Vampire',name:'Regen +60%',desc:'+60% HP regeneration, no prereqs — great early pickup!',icon:'💚',maxStack:2,apply:m=>m.regenMult+=0.6},
+  {tier:2,id:'bloodthirst',path:'Vampire',requires:['regen'],minLevel:3,name:'Kill Heal',desc:'Heal 20% max HP on every kill',icon:'🍷',maxStack:2,apply:m=>m.killHeal+=0.20},
   {tier:4,id:'vampire',path:'Vampire',requires:['bloodthirst'],minLevel:10,name:'Vampire',desc:'+15% lifesteal and +20% kill heal',icon:'🧛',maxStack:1,apply:m=>{m.lifesteal+=0.15;m.killHeal+=0.20;}},
   // COMBOS (need upgrades from two different paths)
   {tier:3,id:'shieldBlast',path:'Combo',requires:['shield','power'],minLevel:5,name:'Shield Blast',desc:'When your shield blocks a hit, attacker takes 20 damage and gets knocked back',icon:'💢',maxStack:1,apply:m=>m.shieldBlast=true},
@@ -1376,13 +1377,101 @@ function loop(t){
 function draw(){
   // Matte dark brushed canvas
   ctx.fillStyle='#090c10'; ctx.fillRect(0,0,canvas.width,canvas.height);
-  const camX=(me?me.x:WORLD/2)-canvas.width/2, camY=(me?me.y:WORLD/2)-canvas.height/2;
-  ctx.save(); ctx.translate(-camX,-camY);
+
+  // ── FOV zoom: scale out as the player grows so big blobs still see their surroundings
+  let zoom = 1.0;
+  if(me && alive){
+    const playerR = radiusFromLevel(me.level, me.bulk);
+    // FOV_BASE_RADIUS is radius at lv1/no-bulk. zoom shrinks as radius grows.
+    zoom = Math.max(0.28, FOV_BASE_RADIUS / playerR);
+  }
+
+  const camX=(me?me.x:WORLD/2)-canvas.width/(2*zoom),
+        camY=(me?me.y:WORLD/2)-canvas.height/(2*zoom);
+  ctx.save();
+  ctx.scale(zoom, zoom);
+  ctx.translate(-camX,-camY);
 
   // Modern grid lines
   ctx.strokeStyle='#131922'; ctx.lineWidth=1;
-  for(let x=0;x<=WORLD;x+=80){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,WORLD);ctx.stroke();}
-  for(let y=0;y<=WORLD;y+=80){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WORLD,y);ctx.stroke();}
+  for(let x=0;x<=WORLD;x+=160){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,WORLD);ctx.stroke();}
+  for(let y=0;y<=WORLD;y+=160){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WORLD,y);ctx.stroke();}
+
+  // ── Biomes / City Zones ─────────────────────────────────────────────────────────────────────
+  // Forest Biome — top-left quarter (rich green)
+  ctx.save();
+  const grad1=ctx.createRadialGradient(1300,1300,0,1300,1300,1100);
+  grad1.addColorStop(0,'rgba(10,35,15,0.55)'); grad1.addColorStop(1,'rgba(10,35,15,0)');
+  ctx.fillStyle=grad1; ctx.fillRect(0,0,WORLD,WORLD);
+  // Tree silhouettes
+  ctx.fillStyle='rgba(0,80,20,0.18)';
+  [[900,800],[1100,600],[1400,900],[700,1200],[1600,1100],[1200,400],[600,500],[1800,700],[500,900],[1300,1500]].forEach(([tx,ty])=>{
+    ctx.beginPath(); ctx.moveTo(tx,ty-55); ctx.lineTo(tx-30,ty+22); ctx.lineTo(tx+30,ty+22); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(tx,ty-80); ctx.lineTo(tx-22,ty-12); ctx.lineTo(tx+22,ty-12); ctx.closePath(); ctx.fill();
+  });
+  ctx.restore();
+
+  // Desert / Wasteland — top-right
+  ctx.save();
+  const grad2=ctx.createRadialGradient(5900,1300,0,5900,1300,1100);
+  grad2.addColorStop(0,'rgba(55,35,8,0.45)'); grad2.addColorStop(1,'rgba(55,35,8,0)');
+  ctx.fillStyle=grad2; ctx.fillRect(0,0,WORLD,WORLD);
+  // Cactus shapes
+  ctx.strokeStyle='rgba(100,140,50,0.22)'; ctx.lineWidth=7;
+  [[5500,900],[5800,600],[6100,1000],[6400,800],[5700,1300],[6000,500],[5300,1100],[6300,1200]].forEach(([tx,ty])=>{
+    ctx.beginPath(); ctx.moveTo(tx,ty+40); ctx.lineTo(tx,ty-50); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(tx-22,ty-10); ctx.lineTo(tx,ty-10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(tx+22,ty); ctx.lineTo(tx,ty); ctx.stroke();
+  });
+  ctx.restore();
+
+  // Tundra / Snow — bottom-left
+  ctx.save();
+  const grad3=ctx.createRadialGradient(1300,5900,0,1300,5900,1100);
+  grad3.addColorStop(0,'rgba(40,55,80,0.45)'); grad3.addColorStop(1,'rgba(40,55,80,0)');
+  ctx.fillStyle=grad3; ctx.fillRect(0,0,WORLD,WORLD);
+  // Ice crystal dots
+  ctx.fillStyle='rgba(180,220,255,0.10)';
+  for(let ix=500;ix<2400;ix+=140) for(let iy=4900;iy<6800;iy+=140){
+    ctx.beginPath(); ctx.arc(ix+(Math.sin(ix*iy)*28),iy+(Math.cos(ix*iy)*18),10+Math.sin(ix)*8,0,Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+
+  // Volcano / Lava — bottom-right
+  ctx.save();
+  const grad4=ctx.createRadialGradient(5900,5900,0,5900,5900,1100);
+  grad4.addColorStop(0,'rgba(80,15,5,0.55)'); grad4.addColorStop(1,'rgba(80,15,5,0)');
+  ctx.fillStyle=grad4; ctx.fillRect(0,0,WORLD,WORLD);
+  // Lava crack lines
+  ctx.strokeStyle='rgba(255,80,20,0.12)'; ctx.lineWidth=3;
+  [[5600,5600,5900,5800],[5800,6000,6100,5700],[6200,5500,5700,6200],[5400,6100,6000,6300]].forEach(([x1,y1,x2,y2])=>{
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  });
+  ctx.restore();
+
+  // City District — upper-mid (buildings/grid)
+  ctx.save();
+  const grad5=ctx.createRadialGradient(3600,900,0,3600,900,800);
+  grad5.addColorStop(0,'rgba(20,28,45,0.65)'); grad5.addColorStop(1,'rgba(20,28,45,0)');
+  ctx.fillStyle=grad5; ctx.fillRect(0,0,WORLD,WORLD);
+  // Building blocks
+  ctx.strokeStyle='rgba(0,229,255,0.07)'; ctx.lineWidth=1;
+  for(let bx=3100;bx<4100;bx+=60){
+    const bh=80+((bx*13)%120);
+    ctx.strokeRect(bx, 400, 42, bh);
+  }
+  ctx.restore();
+
+  // Biome labels (only visible in their region)
+  ctx.save();
+  ctx.font='900 22px -apple-system,sans-serif';
+  ctx.textAlign='center';
+  ctx.fillStyle='rgba(0,200,60,0.18)';  ctx.fillText('🌲 FOREST',    1300, 300);
+  ctx.fillStyle='rgba(200,160,50,0.18)'; ctx.fillText('🏜 DESERT',    5900, 300);
+  ctx.fillStyle='rgba(120,190,255,0.18)';ctx.fillText('❄ TUNDRA',    1300,6900);
+  ctx.fillStyle='rgba(255,80,20,0.18)';  ctx.fillText('🌋 VOLCANO',   5900,6900);
+  ctx.fillStyle='rgba(0,229,255,0.18)';  ctx.fillText('🏙 CITY',      3600, 200);
+  ctx.restore();
 
   // Glowing Arena Outer Boundary
   ctx.strokeStyle='rgba(0,255,136,0.35)'; ctx.lineWidth=3;
